@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+# Directories
+.xmake
+build
+vsxmake2022
