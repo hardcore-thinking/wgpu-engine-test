@@ -769,7 +769,7 @@ int main() {
 
 		std::vector<wgpu::TextureFormat> textureFormats {};
 
-		wgpu::SurfaceConfiguration surfaceConfiguration{};
+		wgpu::SurfaceConfiguration surfaceConfiguration {};
 		surfaceConfiguration.alphaMode = wgpu::CompositeAlphaMode::Auto;
 		surfaceConfiguration.device = device;
 		surfaceConfiguration.format = surface.getPreferredFormat(adapter);
@@ -968,19 +968,21 @@ int main() {
 
 		std::vector<wgpu::VertexAttribute> vertexAttributes(2);
 
-		// position
+		// position	attribute
 		vertexAttributes[0].shaderLocation = 0;
 		vertexAttributes[0].format = wgpu::VertexFormat::Float32x3;
 		vertexAttributes[0].offset = 0;
 
-		// color
+		// color attribute
 		vertexAttributes[1].shaderLocation = 1;
 		vertexAttributes[1].format = wgpu::VertexFormat::Float32x3;
 		vertexAttributes[1].offset = 3 * sizeof(float);
 
+		// actual data
 		vertexBufferLayout.attributeCount = static_cast<uint32_t>(vertexAttributes.size());
 		vertexBufferLayout.attributes = vertexAttributes.data();
 
+		// data stride and stepthrough method
 		vertexBufferLayout.arrayStride = 6 * sizeof(float);
 		vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
 
@@ -1152,7 +1154,7 @@ int main() {
 		commandEncoder.release();
 		commandBuffer.release();
 
-		surface.present();
+		surface.present();		
 	}
 
 	return CleanOnExit(EXIT_SUCCESS, "Successfully exited.");
