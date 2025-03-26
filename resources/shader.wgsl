@@ -1,4 +1,7 @@
 struct MyUniforms {
+	//projectionMatrix: mat4x4f,
+	//viewMatrix: mat4x4f,
+	//modelMatrix: mat4x4f,
 	color: vec4f,
 	time: f32
 };
@@ -56,25 +59,29 @@ struct VertexOutput {
 		0.0, 0.0, 0.0, 1.0,
 	));
 
-	let focal_point = vec3f(0.0, 0.0, -2.0);
-	position = position - focal_point;
-
-	position.x /= position.z;
-	position.y /= position.z;
-
-	position = (R2 * R1 * T * S * vec4f(position, 1.0)).xyz;
-
-	let near = 0.0;
-	let far = 100.0;
-	let scale = 1.0;
-	let P = transpose(mat4x4f(
-		1.0 / scale,           0.0,                0.0,                  0.0,
-                0.0, ratio / scale,                0.0,                  0.0,
-                0.0,           0.0, 1.0 / (far - near), -near / (far - near),
-                0.0,           0.0,                0.0,                  1.0,
+	let focalPoint = vec3f(0.0, 0.0, -2.0);
+	let T2 = transpose(mat4x4f(
+		1.0,  0.0, 0.0, -focalPoint.x,
+		0.0,  1.0, 0.0, -focalPoint.y,
+		0.0,  0.0, 1.0, -focalPoint.z,
+		0.0,  0.0, 0.0,     1.0,
 	));
 
-	out.position = P * vec4f(position, 1.0);
+	let homogeneous_position = vec4f(in.position, 1.0);
+	let viewspace_position = T2 * R2 * R1 * T * S * homogeneous_position;
+
+	let near = 0.01;
+	let far = 100.0;
+	let focal_length = 2.0;
+	let divides = 1.0 / (far - near);
+	let P = transpose(mat4x4f(
+		focal_length,                  0.0,           0.0,                   0.0,
+		         0.0, focal_length * ratio,           0.0,                   0.0,
+		         0.0,                  0.0, far * divides, -far * near * divides,
+		         0.0,                  0.0,           1.0,                   0.0,
+	));
+
+	out.position = P * viewspace_position;
 	
 	out.color = in.color;
 	

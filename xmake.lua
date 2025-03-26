@@ -19,13 +19,13 @@ package("sdl2webgpu")
     add_urls("https://github.com/eliemichel/sdl2webgpu.git")
     add_versions("2024.06.21", "ed785c8e48bd178fd6392d3c540c0ac4746f008d")
 
-    add_deps("cmake", "libsdl", "wgpu-native", "imgui")
+    add_deps("cmake", "libsdl", "wgpu-native")
 
     on_install(function (package)
         local configs = {}
         table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
         table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
-        import("package.tools.cmake").install(package, configs, {packagedeps = {"libsdl", "wgpu-native", "imgui"}})
+        import("package.tools.cmake").install(package, configs, {packagedeps = {"libsdl", "wgpu-native"}})
         os.vcp("sdl2webgpu.h", package:installdir("include"))
     end)
 
@@ -35,7 +35,6 @@ package("sdl2webgpu")
 package_end()
 
 add_rules("mode.debug", "mode.release")
-add_defines("IMGUI_IMPL_WEBGPU_BACKEND_WGPU")
 add_requires("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
 add_requires("imgui", { configs = { wgpu = true, sdl2 = true }})
 
@@ -44,15 +43,13 @@ set_languages("cxx20")
 add_rules("plugin.vsxmake.autoupdate")
 target("wgpu-test")
     set_kind("binary")
-    add_packages("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb", "imgui")
+    add_packages("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
 
     set_warnings("error")
 
     add_files("src/*.cpp")
-    add_files("src/wgpu-cpp/*.cpp")
 
     add_headerfiles("inc/*.hpp")
-    add_headerfiles("inc/wgpu-cpp/*.hpp")
 
     add_includedirs("inc")
     add_extrafiles("xmake.lua")
