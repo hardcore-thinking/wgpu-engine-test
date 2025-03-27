@@ -36,7 +36,6 @@ package_end()
 
 add_rules("mode.debug", "mode.release")
 add_requires("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
-add_requires("imgui", { configs = { wgpu = true, sdl2 = true }})
 
 set_languages("cxx20")
 

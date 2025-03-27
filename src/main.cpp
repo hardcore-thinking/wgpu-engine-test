@@ -17,6 +17,12 @@
 
 #include <sdl2webgpu.h>
 
+#include <Matrix4x4.hpp>
+#include <Vec3.hpp>
+#include <Vec4.hpp>
+
+constexpr float const PI = 3.1415926535897932384626433832795f;
+
 class Logger {
 	public:
 		Logger() = default;
@@ -36,11 +42,9 @@ class Logger {
 };
 
 struct MyUniforms {
-	/*
 	std::array<float, 16> projectionMatrix{};
 	std::array<float, 16> viewMatrix{};
 	std::array<float, 16> modelMatrix{};
-	*/
 	std::array<float, 4> color{};
 	float time = 0.0f;
 	float _pad[3];
@@ -178,7 +182,7 @@ auto CleanOnExit = [&](int code, std::string message = "", bool error = false) -
 	};
 bool running = false;
 
-uint32_t CeilToNextMultiple(uint32_t value, uint32_t step) {
+static uint32_t CeilToNextMultiple(uint32_t value, uint32_t step) {
 	uint32_t divideAndCeil = value / step + (value % step == 0 ? 0 : 1);
 	return step * divideAndCeil;
 }
@@ -514,7 +518,7 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 	wgpu::SurfaceTexture surfaceTexture {};
 	surface.getCurrentTexture(&surfaceTexture);
 
-	std::cout << "Surface texture: ";
+	//std::cout << "Surface texture: ";
 	switch (surfaceTexture.status) {
 	case wgpu::SurfaceGetCurrentTextureStatus::DeviceLost:
 		std::cerr << "Device lost" << std::endl;
@@ -533,7 +537,7 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 		return nullptr;
 
 	case wgpu::SurfaceGetCurrentTextureStatus::Success:
-		std::cout << "Success" << std::endl;
+		//std::cout << "Success" << std::endl;
 		break;
 
 	case wgpu::SurfaceGetCurrentTextureStatus::Timeout:
@@ -739,7 +743,7 @@ static int InitDevice() {
 	requiredLimits.limits.maxInterStageShaderComponents = 5 * sizeof(float);
 	requiredLimits.limits.maxBindGroups = 1;
 	requiredLimits.limits.maxUniformBuffersPerShaderStage = 1;
-	requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4;
+	requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
 	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 
 	requiredLimits.limits.minStorageBufferOffsetAlignment = adapterSupportedLimits.limits.minStorageBufferOffsetAlignment;
@@ -936,7 +940,7 @@ static int InitRenderPipeline() {
 
 	wgpu::BufferDescriptor bufferDesc{};
 	bufferDesc.label = "uniform_buffer";
-	bufferDesc.size = uniformStride + sizeof(MyUniforms);
+	bufferDesc.size = sizeof(MyUniforms);
 	bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
 	bufferDesc.mappedAtCreation = false;
 	uniformBuffer = device.createBuffer(bufferDesc);
@@ -1111,6 +1115,83 @@ int main() {
 	queue.writeBuffer(indexBuffer, 0, indexData.data(), bufferDesc.size);
 
 	MyUniforms uniforms {};
+
+	Matrix4x4 S = Matrix4x4::Transpose(Matrix4x4(
+		0.75f,  0.0f,  0.0f, 0.0f,
+		 0.0f, 0.75f,  0.0f, 0.0f,
+		 0.0f,  0.0f, 0.75f, 0.0f,
+		 0.0f,  0.0f,  0.0f, 1.0f
+	));
+
+	Matrix4x4 T1 = Matrix4x4::Transpose(Matrix4x4(
+		1.0f, 0.0f, 0.0f, 0.5f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	));
+
+	float angle1 = (float)(SDL_GetTicks64()) / 1000.0f;
+	float c1 = std::cos(angle1);
+	float s1 = std::sin(angle1);
+	Matrix4x4 R1 = Matrix4x4::Transpose(Matrix4x4(
+		  c1,   s1, 0.0f, 0.0f,
+		 -s1,   c1, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	));
+
+	uniforms.modelMatrix = Matrix4x4::Identity().Elements();
+
+	Vec3 focalPoint(0.0, 0.0, -2.0);
+	Matrix4x4 T2 = Matrix4x4::Transpose(Matrix4x4(
+		1.0f, 0.0f, 0.0f, -focalPoint.X(),
+		0.0f, 1.0f, 0.0f, -focalPoint.Y(),
+		0.0f, 0.0f, 1.0f, -focalPoint.Z(),
+		0.0f, 0.0f, 0.0f,            1.0f
+	));
+
+	float angle2 = 3.0f * PI / 4.0f;
+	float c2 = std::cos(angle2);
+	float s2 = std::sin(angle2);
+	Matrix4x4 R2 = Matrix4x4::Transpose(Matrix4x4(
+		1.0, 0.0, 0.0, 0.0,
+		0.0,  c2,  s2, 0.0,
+		0.0, -s2,  c2, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	));
+
+	uniforms.viewMatrix = (R2 * T2).Elements();
+
+	float ratio = 800.0f / 600.0f;
+	float focalLength = 2.0f;
+	float vfov = 90.0f * PI / 180.0f;
+	float near = 0.001f;
+	float far = 100.0f;
+
+	// perspective
+	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4(
+		focalLength,                0.0f,               0.0f,                       0.0f,
+		       0.0f, focalLength * ratio,               0.0f,                       0.0f,
+		       0.0f,                0.0f, far / (far - near), -far * near / (far - near),
+		       0.0f,                0.0f,               1.0f,                       0.0f
+	));	
+
+	// orthographic
+	/*
+	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4(
+		1.0,   0.0, 0.0, 0.0,
+		0.0, ratio, 0.0, 0.0,
+		0.0,   0.0, 1.0 / (far - near), -near / (far - near),
+		0.0,   0.0, 0.0, 1.0
+	));
+	*/
+	
+	std::cout << "ORIGINAL:\n" << Matrix4x4::Transpose(P) << std::endl;
+	std::cout << std::endl;
+	std::cout << "TRANSPOSED:\n" << P << std::endl;
+
+	uniforms.projectionMatrix = P.Elements();
+	
 	uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 	uniforms.time = 1.0f;
 
@@ -1133,6 +1214,18 @@ int main() {
 		uniforms.time = static_cast<float>(SDL_GetTicks()) / 1000;
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
+		angle1 =  uniforms.time;
+		c1 = std::cos(angle1);
+		s1 = std::sin(angle1);
+		R1 = Matrix4x4::Transpose(Matrix4x4(
+			  c1,   s1, 0.0f, 0.0f,
+			 -s1,   c1, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		));
+		uniforms.modelMatrix = (R1 * S).Elements();
+		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
+
 		wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
 		commandEncoderDescriptor.label = "command_encoder";
 		commandEncoderDescriptor.nextInChain = nullptr;
@@ -1148,7 +1241,7 @@ int main() {
 		renderPassColorAttachments[0].resolveTarget = nullptr;
 		renderPassColorAttachments[0].storeOp = wgpu::StoreOp::Store;
 		renderPassColorAttachments[0].view = textureView;
-		renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.1f, 0.1f, 0.1f, 1.0f };
+		renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.0f, 0.0f, 0.0f, 1.0f };
 
 		std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments {};
 		renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment {});
