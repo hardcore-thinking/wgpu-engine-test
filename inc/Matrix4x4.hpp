@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <array>
+#include <iomanip>
 
 #include <Vec4.hpp>
 
@@ -18,6 +19,17 @@ class Matrix4x4 {
 	public:
 		static Matrix4x4 Identity();
 		static Matrix4x4 Transpose(Matrix4x4 const& mat);
+
+		static Matrix4x4 RotateX(float angle);
+		static Matrix4x4 RotateY(float angle);
+		static Matrix4x4 RotateZ(float angle);
+
+		static Matrix4x4 Translate(float tx, float ty, float tz);
+
+		static Matrix4x4 Scale(float sx, float sy, float sz);
+
+		static Matrix4x4 Perspective(float fov, float ratio, float near, float far);
+		static Matrix4x4 Orthographic(float ratio, float near, float far);
 
 		float Element(int n, int m) const;
 		std::array<float, 16> Elements() const;

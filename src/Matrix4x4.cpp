@@ -12,7 +12,7 @@ Matrix4x4::Matrix4x4(float e00, float e01, float e02, float e03,
 		e00, e01, e02, e03,
 		e10, e11, e12, e13,
 		e20, e21, e22, e23,
-		e30, e31, e32, e33,
+		e30, e31, e32, e33
 	};
 }
 
@@ -40,6 +40,81 @@ Matrix4x4 Matrix4x4::Transpose(Matrix4x4 const& mat) {
 	};
 
 	return result;
+}
+
+Matrix4x4 Matrix4x4::RotateX(float angle) {
+	float c = std::cos(angle);
+	float s = std::sin(angle);
+
+	return Matrix4x4(
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,    c,    s, 0.0f,
+		0.0f,   -s,    c, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::RotateY(float angle) {
+	float c = std::cos(angle);
+	float s = std::sin(angle);
+
+	return Matrix4x4(
+		   c, 0.0f,   -s, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		   s, 0.0f,    c, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::RotateZ(float angle) {
+	float c = std::cos(angle);
+	float s = std::sin(angle);
+
+	return Matrix4x4(
+		   c,    s, 0.0f, 0.0f,
+		  -s,    c, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::Translate(float tx, float ty, float tz) {
+	return Matrix4x4(
+		1.0f, 0.0f, 0.0f,   tx,
+		0.0f, 1.0f, 0.0f,   ty,
+		0.0f, 0.0f, 1.0f,   tz,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::Scale(float sx, float sy, float sz) {
+	return Matrix4x4(
+		  sx, 0.0f, 0.0f, 0.0f,
+		0.0f,   sy, 0.0f, 0.0f,
+		0.0f, 0.0f,   sz, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::Perspective(float fov, float ratio, float near, float far) {
+	float focalLength = 1.0f / std::tan(fov / 2.0f);
+	float divider = 1.0f / (far - near);
+	return Matrix4x4(
+		focalLength,                0.0f,          0.0f,                    0.0f,
+		       0.0f, focalLength * ratio,          0.0f,                    0.0f,
+		       0.0f,                0.0f, far * divider, (-far * near) * divider,
+	           0.0f,                0.0f,          1.0f,                    0.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::Orthographic(float ratio, float near, float far) {
+	float divider = 1.0f / (far - near);
+	return Matrix4x4(
+		1.0f,  0.0f,           0.0f,              0.0f,
+		0.0f, ratio,           0.0f,              0.0f,
+		0.0f,  0.0f, 1.0f * divider, (-near) * divider,
+		0.0f,  0.0f,           0.0f,              1.0f
+	);
 }
 
 float Matrix4x4::Element(int n, int m) const {
@@ -109,21 +184,25 @@ Matrix4x4 Matrix4x4::operator*(Matrix4x4 const& other) const {
 }
 
 std::ostream& operator<<(std::ostream& os, Matrix4x4 const& mat) {
-	os << "[";
+	std::ios_base::fmtflags f(std::cout.flags());
+
 	for (int i = 0; i < 4; ++i) {
-		os << "[";
+		os << "|";
 		for (int j = 0; j < 4; ++j) {
-			os << mat.Element(i, j);
+			os << std::showpos << std::setprecision(4) << std::fixed << mat.Element(i, j);
 			if (j < 3) {
 				os << ", ";
 			}
 		}
-		os << "]";
+
+		os << "|";
 		if (i < 3) {
 			os << ", ";
 		}
 		std::cout << std::endl;
 	}
-	os << "]";
+
+	std::cout.flags(f);
+
 	return os;
 }

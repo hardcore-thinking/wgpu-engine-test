@@ -1115,82 +1115,29 @@ int main() {
 	queue.writeBuffer(indexBuffer, 0, indexData.data(), bufferDesc.size);
 
 	MyUniforms uniforms {};
+	
+	Matrix4x4 S = Matrix4x4::Transpose(Matrix4x4::Scale(0.3f, 0.3f, 0.3f));
+	Matrix4x4 T1 = Matrix4x4::Transpose(Matrix4x4::Translate(0.0f, 0.0f, 0.0f));
+	Matrix4x4 R1 = Matrix4x4::Transpose(Matrix4x4::RotateZ((float)(SDL_GetTicks64()) / 1000.0f));
 
-	Matrix4x4 S = Matrix4x4::Transpose(Matrix4x4(
-		0.75f,  0.0f,  0.0f, 0.0f,
-		 0.0f, 0.75f,  0.0f, 0.0f,
-		 0.0f,  0.0f, 0.75f, 0.0f,
-		 0.0f,  0.0f,  0.0f, 1.0f
-	));
+	uniforms.modelMatrix = (S * R1 * T1).Elements();
 
-	Matrix4x4 T1 = Matrix4x4::Transpose(Matrix4x4(
-		1.0f, 0.0f, 0.0f, 0.5f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f
-	));
+	Matrix4x4 T2 = Matrix4x4::Transpose(Matrix4x4::Translate(0.0f, 0.0f, 2.0f));
+	Matrix4x4 R2 = Matrix4x4::Transpose(Matrix4x4::RotateX(3.0f * PI / 4.0f));
 
-	float angle1 = (float)(SDL_GetTicks64()) / 1000.0f;
-	float c1 = std::cos(angle1);
-	float s1 = std::sin(angle1);
-	Matrix4x4 R1 = Matrix4x4::Transpose(Matrix4x4(
-		  c1,   s1, 0.0f, 0.0f,
-		 -s1,   c1, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f
-	));
-
-	uniforms.modelMatrix = Matrix4x4::Identity().Elements();
-
-	Vec3 focalPoint(0.0, 0.0, -2.0);
-	Matrix4x4 T2 = Matrix4x4::Transpose(Matrix4x4(
-		1.0f, 0.0f, 0.0f, -focalPoint.X(),
-		0.0f, 1.0f, 0.0f, -focalPoint.Y(),
-		0.0f, 0.0f, 1.0f, -focalPoint.Z(),
-		0.0f, 0.0f, 0.0f,            1.0f
-	));
-
-	float angle2 = 3.0f * PI / 4.0f;
-	float c2 = std::cos(angle2);
-	float s2 = std::sin(angle2);
-	Matrix4x4 R2 = Matrix4x4::Transpose(Matrix4x4(
-		1.0, 0.0, 0.0, 0.0,
-		0.0,  c2,  s2, 0.0,
-		0.0, -s2,  c2, 0.0,
-		0.0, 0.0, 0.0, 1.0
-	));
-
+	//uniforms.viewMatrix = Matrix4x4::Identity().Elements();
 	uniforms.viewMatrix = (R2 * T2).Elements();
 
 	float ratio = 800.0f / 600.0f;
 	float focalLength = 2.0f;
-	float vfov = 90.0f * PI / 180.0f;
+	float vfov = 53.0f * PI / 180.0f;
 	float near = 0.001f;
-	float far = 100.0f;
+	float far = 1000.0f;
 
-	// perspective
-	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4(
-		focalLength,                0.0f,               0.0f,                       0.0f,
-		       0.0f, focalLength * ratio,               0.0f,                       0.0f,
-		       0.0f,                0.0f, far / (far - near), -far * near / (far - near),
-		       0.0f,                0.0f,               1.0f,                       0.0f
-	));	
+	Matrix4x4 P = Matrix4x4::Perspective(vfov, ratio, near, far);
+	//Matrix4x4 P = Matrix4x4::Orthographic(ratio, near, far);
 
-	// orthographic
-	/*
-	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4(
-		1.0,   0.0, 0.0, 0.0,
-		0.0, ratio, 0.0, 0.0,
-		0.0,   0.0, 1.0 / (far - near), -near / (far - near),
-		0.0,   0.0, 0.0, 1.0
-	));
-	*/
-	
-	std::cout << "ORIGINAL:\n" << Matrix4x4::Transpose(P) << std::endl;
-	std::cout << std::endl;
-	std::cout << "TRANSPOSED:\n" << P << std::endl;
-
-	uniforms.projectionMatrix = P.Elements();
+	uniforms.projectionMatrix = Matrix4x4::Transpose(P).Elements();
 	
 	uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 	uniforms.time = 1.0f;
@@ -1214,16 +1161,8 @@ int main() {
 		uniforms.time = static_cast<float>(SDL_GetTicks()) / 1000;
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
-		angle1 =  uniforms.time;
-		c1 = std::cos(angle1);
-		s1 = std::sin(angle1);
-		R1 = Matrix4x4::Transpose(Matrix4x4(
-			  c1,   s1, 0.0f, 0.0f,
-			 -s1,   c1, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		));
-		uniforms.modelMatrix = (R1 * S).Elements();
+		R1 = Matrix4x4::Transpose(Matrix4x4::RotateZ(uniforms.time));
+		uniforms.modelMatrix = (S * R1 * T1).Elements();
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
 
 		wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
