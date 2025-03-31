@@ -11,10 +11,10 @@
 class Matrix4x4 {
 	public:
 		Matrix4x4();
-		Matrix4x4(float e00, float e01, float e02, float e03,
-		   	      float e10, float e11, float e12, float e13,
-			      float e20, float e21, float e22, float e23,
-			      float e30, float e31, float e32, float e33);
+		Matrix4x4(float x0, float y0, float z0, float w0,
+			      float x1, float y1, float z1, float w1,
+			      float x2, float y2, float z2, float w2,
+			      float x3, float y3, float z3, float w3)
 		~Matrix4x4() = default;
 
 	public:
