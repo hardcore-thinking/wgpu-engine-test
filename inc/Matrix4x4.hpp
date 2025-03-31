@@ -5,7 +5,7 @@
 #include <array>
 #include <iomanip>
 
-#include <Vec4.hpp>
+#include <Vector4.hpp>
 
 // this Matrix4x4 class uses the row major order
 class Matrix4x4 {
@@ -35,8 +35,8 @@ class Matrix4x4 {
 
 		float Element(int n, int m) const;
 		std::array<float, 16> Elements() const;
-		Vec4 Line(int n) const;
-		Vec4 Column(int m) const;
+		Vector4 Line(int n) const;
+		Vector4 Column(int m) const;
 
 		float const* Data() const;
 

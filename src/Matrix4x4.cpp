@@ -59,9 +59,9 @@ Matrix4x4 Matrix4x4::RotateY(float angle) {
 	float s = std::sin(angle);
 
 	return Matrix4x4(
-		   c, 0.0f,   -s, 0.0f,
+		   c, 0.0f,    s, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
-		   s, 0.0f,    c, 0.0f,
+		   -s, 0.0f,    c, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	);
 }
@@ -134,16 +134,12 @@ std::array<float, 16> Matrix4x4::Elements() const {
 	return _elements;
 }
 
-Vec4 Matrix4x4::Line(int n) const {
-	return Vec4(_elements[n * 4 + 0], _elements[n * 4 + 1], _elements[n * 4 + 2], _elements[n * 4 + 3]);
+Vector4 Matrix4x4::Line(int n) const {
+	return Vector4(_elements[n * 4 + 0], _elements[n * 4 + 1], _elements[n * 4 + 2], _elements[n * 4 + 3]);
 }
 
-Vec4 Matrix4x4::Column(int m) const {
-	return Vec4(_elements[0 * 4 + m], _elements[1 * 4 + m], _elements[2 * 4 + m], _elements[3 * 4 + m]);
-}
-
-float const* Matrix4x4::Data() const {
-	return _elements.data();
+Vector4 Matrix4x4::Column(int m) const {
+	return Vector4(_elements[0 * 4 + m], _elements[1 * 4 + m], _elements[2 * 4 + m], _elements[3 * 4 + m]);
 }
 
 Matrix4x4 Matrix4x4::operator+(Matrix4x4 const& other) const {

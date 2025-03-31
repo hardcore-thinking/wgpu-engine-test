@@ -21,8 +21,8 @@
 #include <tiny_obj_loader.h>
 
 #include <Matrix4x4.hpp>
-#include <Vec3.hpp>
-#include <Vec4.hpp>
+#include <Vector3.hpp>
+#include <Vector4.hpp>
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
@@ -48,15 +48,15 @@ struct MyUniforms {
 	Matrix4x4 projectionMatrix{};
 	Matrix4x4 viewMatrix{};
 	Matrix4x4 modelMatrix{};
-	Vec4 color{};
+	Vector4 color{};
 	float time = 0.0f;
 	float _pad[3];
 };
 
 struct VertexAttributes {
-	Vec3 position{};
-	Vec3 normal{};
-	Vec3 color{};
+	Vector3 position{};
+	Vector3 normal{};
+	Vector3 color{};
 };
 
 Logger logger{};
@@ -1134,8 +1134,8 @@ static int InitializeApp() {
 
 int main() {
 	std::cout << "sizeof(Matrix4x4): " << sizeof(Matrix4x4) << " bytes" << std::endl;
-	std::cout << "sizeof(Vec3): " << sizeof(Vec3) << " bytes" << std::endl;
-	std::cout << "sizeof(Vec4): " << sizeof(Vec4) << " bytes" << std::endl;
+	std::cout << "sizeof(Vector3): " << sizeof(Vector3) << " bytes" << std::endl;
+	std::cout << "sizeof(Vector4): " << sizeof(Vector4) << " bytes" << std::endl;
 
 	if (InitializeApp() == EXIT_FAILURE) return CleanOnExit(EXIT_FAILURE, "Failed to initialize application.", true);		
 
@@ -1147,7 +1147,7 @@ int main() {
 	};
 	*/
 
-	bool success = LoadGeometryFromOBJ("resources/pyramid.obj", vertexData);
+	bool success = LoadGeometryFromOBJ("resources/mammoth.obj", vertexData);
 	if (!success) {
 		return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
 	}
@@ -1176,7 +1176,7 @@ int main() {
 	uniforms.modelMatrix = Matrix4x4::Transpose(R1 * T1 * S);
 
 	Matrix4x4 T2 = Matrix4x4::Translate(0.0f, 0.0f, 2.0f);
-	Matrix4x4 R2 = Matrix4x4::RotateX(-3.0f * PI / 4.0f);
+	Matrix4x4 R2 = Matrix4x4::RotateX(-2.0f * PI / 3.0f);
 
 	//uniforms.viewMatrix = Matrix4x4::Identity();
 	uniforms.viewMatrix = Matrix4x4::Transpose(T2 * R2);
