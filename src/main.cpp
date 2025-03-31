@@ -17,6 +17,9 @@
 
 #include <sdl2webgpu.h>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
 #include <Matrix4x4.hpp>
 #include <Vec3.hpp>
 #include <Vec4.hpp>
@@ -42,12 +45,18 @@ class Logger {
 };
 
 struct MyUniforms {
-	std::array<float, 16> projectionMatrix{};
-	std::array<float, 16> viewMatrix{};
-	std::array<float, 16> modelMatrix{};
-	std::array<float, 4> color{};
+	Matrix4x4 projectionMatrix{};
+	Matrix4x4 viewMatrix{};
+	Matrix4x4 modelMatrix{};
+	Vec4 color{};
 	float time = 0.0f;
 	float _pad[3];
+};
+
+struct VertexAttributes {
+	Vec3 position{};
+	Vec3 normal{};
+	Vec3 color{};
 };
 
 Logger logger{};
@@ -630,6 +639,7 @@ static wgpu::ShaderModule LoadShaderModule(std::filesystem::path const& path, wg
 		std::cerr << "Can't open " << path << std::endl;
 		return nullptr;
 	}
+
 	file.seekg(0, std::ios::end);
 	size_t size = file.tellg();
 	std::string shaderSource(size, ' ');
@@ -649,6 +659,57 @@ static wgpu::ShaderModule LoadShaderModule(std::filesystem::path const& path, wg
 	shaderDesc.nextInChain = &shaderCodeDesc.chain;
 
 	return device.createShaderModule(shaderDesc);
+}
+
+static bool LoadGeometryFromOBJ(std::filesystem::path const& path, std::vector<VertexAttributes>& vertexData) {
+	tinyobj::attrib_t attrib {};
+	std::vector<tinyobj::shape_t> shapes{};
+	std::vector<tinyobj::material_t> materials{};
+
+	std::string warn{};
+	std::string err{};
+
+	bool result = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.string().c_str());
+
+	if (!warn.empty()) {
+		std::cerr << "Warning: " << warn << std::endl;
+	}
+
+	if (!err.empty()) {
+		std::cerr << "Error: " << err << std::endl;
+	}
+
+	if (!result) {
+		return false;
+	}
+
+	for (auto const& shape : shapes) {
+		size_t offset = vertexData.size();
+		vertexData.resize(offset + shape.mesh.indices.size());
+		for (size_t i = 0; i < shape.mesh.indices.size(); i++) {
+			tinyobj::index_t idx = shape.mesh.indices[i];
+
+			vertexData[i].position = {
+				 attrib.vertices[3 * idx.vertex_index + 0],
+				-attrib.vertices[3 * idx.vertex_index + 2],
+				 attrib.vertices[3 * idx.vertex_index + 1]
+			};
+
+			vertexData[i].normal = {
+				 attrib.normals[3 * idx.normal_index + 0],
+				-attrib.normals[3 * idx.normal_index + 2],
+				 attrib.normals[3 * idx.normal_index + 1]
+			};
+
+			vertexData[i].color = {
+				 attrib.colors[3 * idx.vertex_index + 0],
+				 attrib.colors[3 * idx.vertex_index + 1],
+				 attrib.colors[3 * idx.vertex_index + 2]
+			};
+		}
+	}
+
+	return true;
 }
 
 static int InitInstance() {
@@ -736,11 +797,11 @@ static int InitDevice() {
 	requiredLimits.limits.maxTextureDimension2D = 800;
 	requiredLimits.limits.maxTextureArrayLayers = 1;
 
-	requiredLimits.limits.maxVertexAttributes = 2;
+	requiredLimits.limits.maxVertexAttributes = 3;
 	requiredLimits.limits.maxVertexBuffers = 1;
-	requiredLimits.limits.maxBufferSize = 15 * 5 * sizeof(float);
-	requiredLimits.limits.maxVertexBufferArrayStride = 6 * sizeof(float);
-	requiredLimits.limits.maxInterStageShaderComponents = 5 * sizeof(float);
+	requiredLimits.limits.maxBufferSize = 1000000 * sizeof(VertexAttributes);
+	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(VertexAttributes);
+	requiredLimits.limits.maxInterStageShaderComponents = 6;
 	requiredLimits.limits.maxBindGroups = 1;
 	requiredLimits.limits.maxUniformBuffersPerShaderStage = 1;
 	requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
@@ -993,24 +1054,29 @@ static int InitRenderPipeline() {
 
 	wgpu::VertexBufferLayout vertexBufferLayout{};
 
-	std::vector<wgpu::VertexAttribute> vertexAttributes(2);
+	std::vector<wgpu::VertexAttribute> vertexAttributes(3);
 
 	// position	attribute
 	vertexAttributes[0].shaderLocation = 0;
 	vertexAttributes[0].format = wgpu::VertexFormat::Float32x3;
-	vertexAttributes[0].offset = 0;
+	vertexAttributes[0].offset = offsetof(VertexAttributes, position);
 
-	// color attribute
+	// normal attribute
 	vertexAttributes[1].shaderLocation = 1;
 	vertexAttributes[1].format = wgpu::VertexFormat::Float32x3;
-	vertexAttributes[1].offset = 3 * sizeof(float);
+	vertexAttributes[1].offset = offsetof(VertexAttributes, normal);
+
+	// color attribute
+	vertexAttributes[2].shaderLocation = 2;
+	vertexAttributes[2].format = wgpu::VertexFormat::Float32x3;
+	vertexAttributes[2].offset = offsetof(VertexAttributes, color);
 
 	// actual data
 	vertexBufferLayout.attributeCount = static_cast<uint32_t>(vertexAttributes.size());
 	vertexBufferLayout.attributes = vertexAttributes.data();
 
 	// data stride and stepthrough method
-	vertexBufferLayout.arrayStride = 6 * sizeof(float);
+	vertexBufferLayout.arrayStride = sizeof(VertexAttributes);
 	vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
 
 	vertexBufferLayouts.push_back(vertexBufferLayout);
@@ -1067,9 +1133,13 @@ static int InitializeApp() {
 }
 
 int main() {
+	std::cout << "sizeof(Matrix4x4): " << sizeof(Matrix4x4) << " bytes" << std::endl;
+	std::cout << "sizeof(Vec3): " << sizeof(Vec3) << " bytes" << std::endl;
+	std::cout << "sizeof(Vec4): " << sizeof(Vec4) << " bytes" << std::endl;
+
 	if (InitializeApp() == EXIT_FAILURE) return CleanOnExit(EXIT_FAILURE, "Failed to initialize application.", true);		
 
-	std::vector<float> vertexData; /* = {
+	std::vector<VertexAttributes> vertexData; /* = {
 		-0.5, -0.5, 1.0, 0.0, 0.0,
 		+0.5, -0.5, 0.0, 1.0, 0.0,
 		+0.5, +0.5, 0.0, 0.0, 1.0,
@@ -1077,23 +1147,14 @@ int main() {
 	};
 	*/
 
-	std::vector<uint16_t> indexData; /* = {
-		0, 1, 2,
-		0, 2, 3
-	};
-	*/
-
-	bool success = LoadGeometry("resources/pyramid.txt", vertexData, indexData, 3);
+	bool success = LoadGeometryFromOBJ("resources/mammoth.obj", vertexData);
 	if (!success) {
 		return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
 	}
 
-	uint32_t vertexCount = vertexData.size() / 5;
-	uint32_t indexCount = indexData.size();
-
 	wgpu::BufferDescriptor bufferDesc {};
 	bufferDesc.label = "vertex_buffer";
-	bufferDesc.size = vertexData.size() * sizeof(float);
+	bufferDesc.size = vertexData.size() * sizeof(VertexAttributes);
 	bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex;
 	bufferDesc.mappedAtCreation = false;
 	vertexBuffer = device.createBuffer(bufferDesc);
@@ -1103,30 +1164,22 @@ int main() {
 
 	queue.writeBuffer(vertexBuffer, 0, vertexData.data(), bufferDesc.size);
 
-	bufferDesc.label = "index_buffer";
-	bufferDesc.size = indexData.size() * sizeof(uint16_t);
-	bufferDesc.size = (bufferDesc.size + 3) & ~3;
-	bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Index;
-	indexBuffer = device.createBuffer(bufferDesc);
-	if (indexBuffer == nullptr) {
-		return CleanOnExit(EXIT_FAILURE, "Failed to create index buffer.", true);
-	}
-
-	queue.writeBuffer(indexBuffer, 0, indexData.data(), bufferDesc.size);
+	int indexCount = static_cast<int>(vertexData.size());
 
 	MyUniforms uniforms {};
 	
-	Matrix4x4 S = Matrix4x4::Transpose(Matrix4x4::Scale(0.3f, 0.3f, 0.3f));
-	Matrix4x4 T1 = Matrix4x4::Transpose(Matrix4x4::Translate(0.0f, 0.0f, 0.0f));
+	Matrix4x4 S  = Matrix4x4::Transpose(Matrix4x4::Scale(0.5f));
+	Matrix4x4 T1 = Matrix4x4::Transpose(Matrix4x4::Translate(0.5f, 0.0f, 0.0f));
 	Matrix4x4 R1 = Matrix4x4::Transpose(Matrix4x4::RotateZ((float)(SDL_GetTicks64()) / 1000.0f));
 
-	uniforms.modelMatrix = (S * R1 * T1).Elements();
+	//uniforms.modelMatrix = Matrix4x4::Identity();
+	uniforms.modelMatrix = R1 * T1 * S;
 
 	Matrix4x4 T2 = Matrix4x4::Transpose(Matrix4x4::Translate(0.0f, 0.0f, 2.0f));
 	Matrix4x4 R2 = Matrix4x4::Transpose(Matrix4x4::RotateX(3.0f * PI / 4.0f));
 
-	//uniforms.viewMatrix = Matrix4x4::Identity().Elements();
-	uniforms.viewMatrix = (R2 * T2).Elements();
+	//uniforms.viewMatrix = Matrix4x4::Identity();
+	uniforms.viewMatrix = R2 * T2;
 
 	float ratio = 800.0f / 600.0f;
 	float focalLength = 2.0f;
@@ -1134,10 +1187,10 @@ int main() {
 	float near = 0.001f;
 	float far = 1000.0f;
 
-	Matrix4x4 P = Matrix4x4::Perspective(vfov, ratio, near, far);
-	//Matrix4x4 P = Matrix4x4::Orthographic(ratio, near, far);
+	//Matrix4x4 P = Matrix4x4::Orthographic(ratio, near, far));
+	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4::Perspective(vfov, ratio, near, far));
 
-	uniforms.projectionMatrix = Matrix4x4::Transpose(P).Elements();
+	uniforms.projectionMatrix = P;
 	
 	uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 	uniforms.time = 1.0f;
@@ -1161,8 +1214,8 @@ int main() {
 		uniforms.time = static_cast<float>(SDL_GetTicks()) / 1000;
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
-		R1 = Matrix4x4::Transpose(Matrix4x4::RotateZ(uniforms.time));
-		uniforms.modelMatrix = (S * R1 * T1).Elements();
+		R1 = Matrix4x4::RotateZ(uniforms.time);
+		uniforms.modelMatrix = R1 * T1 * S;
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
 
 		wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
@@ -1180,7 +1233,7 @@ int main() {
 		renderPassColorAttachments[0].resolveTarget = nullptr;
 		renderPassColorAttachments[0].storeOp = wgpu::StoreOp::Store;
 		renderPassColorAttachments[0].view = textureView;
-		renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.0f, 0.0f, 0.0f, 1.0f };
+		renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.1f, 0.1f, 0.1f, 1.0f };
 
 		std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments {};
 		renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment {});
@@ -1212,11 +1265,10 @@ int main() {
 		}
 
 		renderPassEncoder.setPipeline(renderPipeline);
-		renderPassEncoder.setVertexBuffer(0, vertexBuffer, 0, vertexBuffer.getSize());
-		renderPassEncoder.setIndexBuffer(indexBuffer, wgpu::IndexFormat::Uint16, 0, indexBuffer.getSize());
+		renderPassEncoder.setVertexBuffer(0, vertexBuffer, 0, vertexData.size() * sizeof(VertexAttributes));
 
 		renderPassEncoder.setBindGroup(0, bindGroups[0], 0, nullptr);
-		renderPassEncoder.drawIndexed(indexCount, 1, 0, 0, 0);
+		renderPassEncoder.draw(indexCount, 1, 0, 0);
 		
 		renderPassEncoder.end();
 

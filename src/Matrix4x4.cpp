@@ -71,8 +71,8 @@ Matrix4x4 Matrix4x4::RotateZ(float angle) {
 	float s = std::sin(angle);
 
 	return Matrix4x4(
-		   c,    s, 0.0f, 0.0f,
-		  -s,    c, 0.0f, 0.0f,
+		   c,   -s, 0.0f, 0.0f,
+		   s,    c, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	);
@@ -83,6 +83,15 @@ Matrix4x4 Matrix4x4::Translate(float tx, float ty, float tz) {
 		1.0f, 0.0f, 0.0f,   tx,
 		0.0f, 1.0f, 0.0f,   ty,
 		0.0f, 0.0f, 1.0f,   tz,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::Scale(float s) {
+	return Matrix4x4(
+		   s, 0.0f, 0.0f, 0.0f,
+		0.0f,    s, 0.0f, 0.0f,
+		0.0f, 0.0f,   s, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	);
 }

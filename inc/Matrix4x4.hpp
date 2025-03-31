@@ -26,6 +26,7 @@ class Matrix4x4 {
 
 		static Matrix4x4 Translate(float tx, float ty, float tz);
 
+		static Matrix4x4 Scale(float s);
 		static Matrix4x4 Scale(float sx, float sy, float sz);
 
 		static Matrix4x4 Perspective(float fov, float ratio, float near, float far);
