@@ -1147,7 +1147,7 @@ int main() {
 	};
 	*/
 
-	bool success = LoadGeometryFromOBJ("resources/mammoth.obj", vertexData);
+	bool success = LoadGeometryFromOBJ("resources/pyramid.obj", vertexData);
 	if (!success) {
 		return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
 	}
@@ -1168,18 +1168,18 @@ int main() {
 
 	MyUniforms uniforms {};
 	
-	Matrix4x4 S  = Matrix4x4::Transpose(Matrix4x4::Scale(0.5f));
-	Matrix4x4 T1 = Matrix4x4::Transpose(Matrix4x4::Translate(0.5f, 0.0f, 0.0f));
-	Matrix4x4 R1 = Matrix4x4::Transpose(Matrix4x4::RotateZ((float)(SDL_GetTicks64()) / 1000.0f));
+	Matrix4x4 S  = Matrix4x4::Scale(0.3f);
+	Matrix4x4 T1 = Matrix4x4::Translate(0.5f, 0.0f, 0.0f);
+	Matrix4x4 R1 = Matrix4x4::RotateZ(-(float)(SDL_GetTicks64()) / 1000.0f);
 
 	//uniforms.modelMatrix = Matrix4x4::Identity();
-	uniforms.modelMatrix = R1 * T1 * S;
+	uniforms.modelMatrix = Matrix4x4::Transpose(R1 * T1 * S);
 
-	Matrix4x4 T2 = Matrix4x4::Transpose(Matrix4x4::Translate(0.0f, 0.0f, 2.0f));
-	Matrix4x4 R2 = Matrix4x4::Transpose(Matrix4x4::RotateX(3.0f * PI / 4.0f));
+	Matrix4x4 T2 = Matrix4x4::Translate(0.0f, 0.0f, 2.0f);
+	Matrix4x4 R2 = Matrix4x4::RotateX(-3.0f * PI / 4.0f);
 
 	//uniforms.viewMatrix = Matrix4x4::Identity();
-	uniforms.viewMatrix = R2 * T2;
+	uniforms.viewMatrix = Matrix4x4::Transpose(T2 * R2);
 
 	float ratio = 800.0f / 600.0f;
 	float focalLength = 2.0f;
@@ -1188,9 +1188,9 @@ int main() {
 	float far = 1000.0f;
 
 	//Matrix4x4 P = Matrix4x4::Orthographic(ratio, near, far));
-	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4::Perspective(vfov, ratio, near, far));
+	Matrix4x4 P = Matrix4x4::Perspective(vfov, ratio, near, far);
 
-	uniforms.projectionMatrix = P;
+	uniforms.projectionMatrix = Matrix4x4::Transpose(P);
 	
 	uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 	uniforms.time = 1.0f;
@@ -1211,11 +1211,11 @@ int main() {
 			return CleanOnExit(EXIT_FAILURE, "Failed to get texture view.", true);
 		}
 
-		uniforms.time = static_cast<float>(SDL_GetTicks()) / 1000;
+		uniforms.time = -static_cast<float>(SDL_GetTicks()) / 1000;
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
 		R1 = Matrix4x4::RotateZ(uniforms.time);
-		uniforms.modelMatrix = R1 * T1 * S;
+		uniforms.modelMatrix = Matrix4x4::Transpose(R1 * T1 * S);
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
 
 		wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
