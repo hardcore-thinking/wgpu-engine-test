@@ -7,6 +7,7 @@ struct MyUniforms {
 };
 
 @group(0) @binding(0) var<uniform> myUniforms: MyUniforms;
+@group(0) @binding(1) var gradientTexture: texture_2d<f32>;
 
 struct VertexInput {
 	@location(0) position: vec3f,
@@ -29,17 +30,16 @@ struct VertexOutput {
 }
 
 @fragment fn frag_main(in: VertexOutput) -> @location(0) vec4f {
-	let normal = normalize(in.normal);
-	let lightColor1 = vec3f(1.0f, 0.9, 0.6);
-	let lightColor2 = vec3f(0.6f, 0.9, 1.0);
-	let lightDirection1 = vec3f(0.5, -0.9, 0.1);
-	let lightDirection2 = vec3f(0.2, 0.4, 0.3);
-	let shading1 = max(0.0, dot(lightDirection1, normal));
-	let shading2 = max(0.0, dot(lightDirection2, normal));
-	let shading = shading1 * lightColor1 + shading2 * lightColor2;
-	let color = in.color * shading;
-	//let color = in.color * -normal.z;
-	//let color = in.color * myUniforms.color.rgb;
+	//let normal = normalize(in.normal);
+	//let lightColor1 = vec3f(1.0f, 0.9, 0.6);
+	//let lightColor2 = vec3f(0.6f, 0.9, 1.0);
+	//let lightDirection1 = vec3f(0.5, -0.9, 0.1);
+	//let lightDirection2 = vec3f(0.2, 0.4, 0.3);
+	//let shading1 = max(0.0, dot(lightDirection1, normal));
+	//let shading2 = max(0.0, dot(lightDirection2, normal));
+	//let shading = shading1 * lightColor1 + shading2 * lightColor2;
+	//let color = in.color * shading;
+	let color = textureLoad(gradientTexture, vec2i(in.position.xy), 0).rgb;
 	let linear_color = pow(color, vec3f(2.2));
 	return vec4f(linear_color, myUniforms.color.a);
 }

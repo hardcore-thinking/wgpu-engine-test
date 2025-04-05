@@ -54,12 +54,20 @@ Vector4 Vector4::operator-(Vector4 const& other) const {
 	return Vector4(_x - other._x, _y - other._y, _z - other._z, _w - other._w);
 }
 
+Vector4 Vector4::operator-() const {
+	return Vector4(-_x, -_y, -_z, -_w);
+}
+
 Vector4 Vector4::operator*(float scalar) const {
 	return Vector4(_x * scalar, _y * scalar, _z * scalar, _w * scalar);
 }
 
 Vector4 Vector4::operator/(float scalar) const {
 	return Vector4(_x / scalar, _y / scalar, _z / scalar, _w / scalar);
+}
+
+float Vector4::Magnitude() const {
+	return std::sqrt(_x * _x + _y * _y + _z * _z + _w * _w);
 }
 
 float Vector4::Dot(Vector4 const& a, Vector4 const& b) {

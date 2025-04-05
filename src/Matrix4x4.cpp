@@ -5,9 +5,9 @@ Matrix4x4::Matrix4x4() {
 }
 
 Matrix4x4::Matrix4x4(float x0, float y0, float z0, float w0,
-					 float x1, float y1, float z1, float w1,
-					 float x2, float y2, float z2, float w2,
-					 float x3, float y3, float z3, float w3) {
+	float x1, float y1, float z1, float w1,
+	float x2, float y2, float z2, float w2,
+	float x3, float y3, float z3, float w3) {
 	_elements = {
 		x0, y0, z0, w0,
 		x1, y1, z1, w1,
@@ -24,14 +24,14 @@ Matrix4x4 Matrix4x4::Identity() {
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f,
 	};
-	
+
 	return result;
 }
 
 Matrix4x4 Matrix4x4::Transpose(Matrix4x4 const& mat) {
 	Matrix4x4 result;
 	std::array<float, 16> const& e = mat._elements;
-	
+
 	result._elements = {
 		e[0], e[4],  e[8], e[12],
 		e[1], e[5],  e[9], e[13],
@@ -61,7 +61,7 @@ Matrix4x4 Matrix4x4::RotateY(float angle) {
 	return Matrix4x4(
 		   c, 0.0f,    s, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
-		   -s, 0.0f,    c, 0.0f,
+	   	  -s, 0.0f,    c, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	);
 }
@@ -91,7 +91,7 @@ Matrix4x4 Matrix4x4::Scale(float s) {
 	return Matrix4x4(
 		   s, 0.0f, 0.0f, 0.0f,
 		0.0f,    s, 0.0f, 0.0f,
-		0.0f, 0.0f,   s, 0.0f,
+		0.0f, 0.0f,    s, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	);
 }
@@ -109,10 +109,10 @@ Matrix4x4 Matrix4x4::Perspective(float fov, float ratio, float near, float far) 
 	float focalLength = 1.0f / std::tan(fov / 2.0f);
 	float divider = 1.0f / (far - near);
 	return Matrix4x4(
-		focalLength,                0.0f,          0.0f,                    0.0f,
-		       0.0f, focalLength * ratio,          0.0f,                    0.0f,
-		       0.0f,                0.0f, far * divider, (-far * near) * divider,
-	           0.0f,                0.0f,          1.0f,                    0.0f
+		focalLength / ratio,        0.0f,          0.0f,                  0.0f,
+		               0.0f, focalLength,          0.0f,                  0.0f,
+		               0.0f,        0.0f, far * divider, -far * near * divider,
+		               0.0f,        0.0f,          1.0f,                  0.0f
 	);
 }
 
@@ -123,6 +123,25 @@ Matrix4x4 Matrix4x4::Orthographic(float ratio, float near, float far) {
 		0.0f, ratio,           0.0f,              0.0f,
 		0.0f,  0.0f, 1.0f * divider, (-near) * divider,
 		0.0f,  0.0f,           0.0f,              1.0f
+	);
+}
+
+Matrix4x4 Matrix4x4::LookAt(Vector3 const& from, Vector3 const& to, Vector3 const& upDirection) {
+	Vector3 forward = Vector3::Normalize(to - from);
+	Vector3 right = Vector3::Normalize(Vector3::Cross(upDirection, forward));
+	Vector3 up = Vector3::Cross(forward, right);
+
+	Vector3 translation(
+		-Vector3::Dot(right, from),
+		-Vector3::Dot(up, from),
+		-Vector3::Dot(forward, from)
+	);
+
+	return Matrix4x4(
+		  right.X(),   right.Y(),   right.Z(), translation.X(),
+	 	     up.X(),      up.Y(),      up.Z(), translation.Y(),
+		forward.X(), forward.Y(), forward.Z(), translation.Z(),
+		       0.0f,        0.0f,        0.0f,            1.0f
 	);
 }
 
@@ -164,7 +183,7 @@ Matrix4x4 Matrix4x4::operator-(Matrix4x4 const& other) const {
 
 Matrix4x4 Matrix4x4::operator*(Matrix4x4 const& other) const {
 	Matrix4x4 result;
-	
+
 	result._elements[0]  = Element(0, 0) * other.Element(0, 0) + Element(0, 1) * other.Element(1, 0) + Element(0, 2) * other.Element(2, 0) + Element(0, 3) * other.Element(3, 0);
 	result._elements[1]  = Element(0, 0) * other.Element(0, 1) + Element(0, 1) * other.Element(1, 1) + Element(0, 2) * other.Element(2, 1) + Element(0, 3) * other.Element(3, 1);
 	result._elements[2]  = Element(0, 0) * other.Element(0, 2) + Element(0, 1) * other.Element(1, 2) + Element(0, 2) * other.Element(2, 2) + Element(0, 3) * other.Element(3, 2);
@@ -194,16 +213,13 @@ std::ostream& operator<<(std::ostream& os, Matrix4x4 const& mat) {
 	for (int i = 0; i < 4; ++i) {
 		os << "|";
 		for (int j = 0; j < 4; ++j) {
-			os << std::showpos << std::setprecision(4) << std::fixed << mat.Element(i, j);
+			os << std::showpos << std::setprecision(3) << std::fixed << mat.Element(i, j);
 			if (j < 3) {
 				os << ", ";
 			}
 		}
 
 		os << "|";
-		if (i < 3) {
-			os << ", ";
-		}
 		std::cout << std::endl;
 	}
 

@@ -5,6 +5,7 @@
 #include <array>
 #include <iomanip>
 
+#include <Vector3.hpp>
 #include <Vector4.hpp>
 
 // this Matrix4x4 class uses the row major order
@@ -32,13 +33,13 @@ class Matrix4x4 {
 
 		static Matrix4x4 Perspective(float fov, float ratio, float near, float far);
 		static Matrix4x4 Orthographic(float ratio, float near, float far);
+		
+		static Matrix4x4 LookAt(Vector3 const& from, Vector3 const& to, Vector3 const& up);
 
 		float Element(int n, int m) const;
 		std::array<float, 16> Elements() const;
 		Vector4 Line(int n) const;
 		Vector4 Column(int m) const;
-
-		float const* Data() const;
 
 		Matrix4x4 operator+(Matrix4x4 const& other) const;
 		Matrix4x4 operator-() const;

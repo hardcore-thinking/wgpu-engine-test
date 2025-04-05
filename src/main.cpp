@@ -26,6 +26,9 @@
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
+constexpr float windowWidth = 640.0f;
+constexpr float windowHeight = 480.0f;
+
 class Logger {
 	public:
 		Logger() = default;
@@ -86,6 +89,7 @@ std::vector<wgpu::BindGroup> bindGroups{};
 uint32_t uniformStride = 0;
 wgpu::Texture depthTexture = nullptr;
 wgpu::TextureView depthTextureView = nullptr;
+wgpu::Texture texture = nullptr;
 
 auto CleanOnExit = [&](int code, std::string message = "", bool error = false) -> int {
 	if (error) {
@@ -185,6 +189,12 @@ auto CleanOnExit = [&](int code, std::string message = "", bool error = false) -
 		depthTexture.destroy();
 		depthTexture.release();
 		depthTexture = nullptr;
+	}
+
+	if (texture != nullptr) {
+		texture.destroy();
+		texture.release();
+		texture = nullptr;
 	}
 
 	return code;
@@ -732,8 +742,8 @@ static int InitWindow() {
 	windowCreationInfo.title = "Stop procrastinating !";
 	windowCreationInfo.x = SDL_WINDOWPOS_CENTERED;
 	windowCreationInfo.y = SDL_WINDOWPOS_CENTERED;
-	windowCreationInfo.w = 800;
-	windowCreationInfo.h = 600;
+	windowCreationInfo.w = windowWidth;
+	windowCreationInfo.h = windowHeight;
 	windowCreationInfo.flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 
 	if (!CreateWindow(&window, windowCreationInfo)) {
@@ -793,8 +803,8 @@ static int InitDevice() {
 	GetAdapterSupportedLimits(adapter, adapterSupportedLimits, true);
 
 	wgpu::RequiredLimits requiredLimits{};
-	requiredLimits.limits.maxTextureDimension1D = 600;
-	requiredLimits.limits.maxTextureDimension2D = 800;
+	requiredLimits.limits.maxTextureDimension1D = windowHeight;
+	requiredLimits.limits.maxTextureDimension2D = windowWidth;
 	requiredLimits.limits.maxTextureArrayLayers = 1;
 
 	requiredLimits.limits.maxVertexAttributes = 3;
@@ -806,6 +816,8 @@ static int InitDevice() {
 	requiredLimits.limits.maxUniformBuffersPerShaderStage = 1;
 	requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
 	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
+	requiredLimits.limits.maxSampledTexturesPerShaderStage = 1;
+	requiredLimits.limits.maxBindingsPerBindGroup = 2;
 
 	requiredLimits.limits.minStorageBufferOffsetAlignment = adapterSupportedLimits.limits.minStorageBufferOffsetAlignment;
 	requiredLimits.limits.minUniformBufferOffsetAlignment = adapterSupportedLimits.limits.minUniformBufferOffsetAlignment;
@@ -852,13 +864,13 @@ static void ConfigureSurface() {
 	surfaceConfiguration.alphaMode = wgpu::CompositeAlphaMode::Auto;
 	surfaceConfiguration.device = device;
 	surfaceConfiguration.format = surface.getPreferredFormat(adapter);
-	surfaceConfiguration.height = 600;
+	surfaceConfiguration.height = windowHeight;
 	surfaceConfiguration.nextInChain = nullptr;
 	surfaceConfiguration.presentMode = wgpu::PresentMode::Fifo;
 	surfaceConfiguration.usage = wgpu::TextureUsage::RenderAttachment;
 	surfaceConfiguration.viewFormatCount = textureFormats.size();
 	surfaceConfiguration.viewFormats = (WGPUTextureFormat*)(textureFormats.data());
-	surfaceConfiguration.width = 800;
+	surfaceConfiguration.width = windowWidth;
 	surface.configure(surfaceConfiguration);
 
 	logger.Info("Compatible surface configured.");
@@ -913,7 +925,7 @@ static int InitRenderPipeline() {
 	depthTextureDescriptor.format = depthTextureFormat;
 	depthTextureDescriptor.mipLevelCount = 1;
 	depthTextureDescriptor.sampleCount = 1;
-	depthTextureDescriptor.size = { 800, 600, 1 };
+	depthTextureDescriptor.size = { static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1 };
 	depthTextureDescriptor.usage = wgpu::TextureUsage::RenderAttachment;
 	depthTextureDescriptor.viewFormatCount = 1;
 	depthTextureDescriptor.viewFormats = (WGPUTextureFormat*)(&depthTextureFormat);
@@ -981,25 +993,32 @@ static int InitRenderPipeline() {
 	fragmentState.targetCount = colorTargetStates.size();
 	fragmentState.targets = colorTargetStates.data();
 
-	wgpu::BindGroupLayoutEntry bindGroupLayoutEntry = wgpu::Default;
-	bindGroupLayoutEntry.binding = 0;
-	bindGroupLayoutEntry.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+	std::vector<wgpu::BindGroupLayoutEntry> bindGroupLayoutEntries(2, wgpu::Default);
+	
+	wgpu::BindGroupLayoutEntry& bindingLayout = bindGroupLayoutEntries[0];
+	bindingLayout.binding = 0;
+	bindingLayout.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+	bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
+	bindingLayout.buffer.minBindingSize = sizeof(MyUniforms);
+	bindingLayout.buffer.hasDynamicOffset = false;
+	bindingLayout.buffer.nextInChain = nullptr;
 
-	bindGroupLayoutEntry.buffer.type = wgpu::BufferBindingType::Uniform;
-	bindGroupLayoutEntry.buffer.minBindingSize = sizeof(MyUniforms);
-	bindGroupLayoutEntry.buffer.hasDynamicOffset = false;
-	bindGroupLayoutEntry.buffer.nextInChain = nullptr;
+	wgpu::BindGroupLayoutEntry& textureBindingLayout = bindGroupLayoutEntries[1];
+	textureBindingLayout.binding = 1;
+	textureBindingLayout.visibility = wgpu::ShaderStage::Fragment;
+	textureBindingLayout.texture.sampleType = wgpu::TextureSampleType::Float;
+	textureBindingLayout.texture.viewDimension = wgpu::TextureViewDimension::_2D;
 
-	wgpu::BindGroupLayoutDescriptor bindGroupLayoutDescriptor{};
-	bindGroupLayoutDescriptor.entryCount = 1;
-	bindGroupLayoutDescriptor.entries = &bindGroupLayoutEntry;
+	wgpu::BindGroupLayoutDescriptor bindGroupLayoutDescriptor {};
+	bindGroupLayoutDescriptor.entryCount = bindGroupLayoutEntries.size();
+	bindGroupLayoutDescriptor.entries = bindGroupLayoutEntries.data();
 	bindGroupLayouts.push_back(device.createBindGroupLayout(bindGroupLayoutDescriptor));
 	if (bindGroupLayouts[0] == nullptr) {
 		logger.Error("Failed to create bind group layout.");
 		return EXIT_FAILURE;
 	}
 
-	wgpu::BufferDescriptor bufferDesc{};
+	wgpu::BufferDescriptor bufferDesc {};
 	bufferDesc.label = "uniform_buffer";
 	bufferDesc.size = sizeof(MyUniforms);
 	bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
@@ -1010,16 +1029,73 @@ static int InitRenderPipeline() {
 		return EXIT_FAILURE;
 	}
 
-	wgpu::BindGroupEntry bindGroupEntry{};
-	bindGroupEntry.binding = 0;
-	bindGroupEntry.buffer = uniformBuffer;
-	bindGroupEntry.offset = 0;
-	bindGroupEntry.size = sizeof(MyUniforms);
+	wgpu::TextureDescriptor textureDescriptor{};
+	textureDescriptor.dimension = wgpu::TextureDimension::_2D;
+	textureDescriptor.size = { 256, 256, 1 };
+	textureDescriptor.mipLevelCount = 1;
+	textureDescriptor.sampleCount = 1;
+	textureDescriptor.format = wgpu::TextureFormat::RGBA8Unorm;
+	textureDescriptor.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
+	textureDescriptor.viewFormatCount = 0;
+	textureDescriptor.viewFormats = nullptr;
+	texture = device.createTexture(textureDescriptor);
+	if (texture == nullptr) {
+		logger.Error("Failed to create texture.");
+		return EXIT_FAILURE;
+	}
+
+	std::vector<uint8_t> pixels(4 * textureDescriptor.size.width * textureDescriptor.size.height);
+	for (uint32_t i = 0; i < textureDescriptor.size.width; ++i) {
+		for (uint32_t j = 0; j < textureDescriptor.size.height; ++j) {
+			uint8_t* p = &pixels[4 * (j * textureDescriptor.size.width + i)];
+			p[0] = (uint8_t)i; // r
+			p[1] = (uint8_t)j; // g
+			p[2] = 128;        // b
+			p[3] = 255;        // a
+		}
+	}
+
+	wgpu::ImageCopyTexture destination {};
+	destination.texture = texture;
+	destination.mipLevel = 0;
+	destination.origin = { 0, 0, 0 };
+	destination.aspect = wgpu::TextureAspect::All;
+
+	wgpu::TextureDataLayout source {};
+	source.offset = 0;
+	source.bytesPerRow = 4 * textureDescriptor.size.width;
+	source.rowsPerImage = textureDescriptor.size.height;
+
+	queue.writeTexture(destination, pixels.data(), 4 * textureDescriptor.size.width * textureDescriptor.size.height, source, textureDescriptor.size);
+
+	wgpu::TextureViewDescriptor textureViewDescriptor {};
+	textureViewDescriptor.aspect = wgpu::TextureAspect::All;
+	textureViewDescriptor.baseArrayLayer = 0;
+	textureViewDescriptor.arrayLayerCount = 1;
+	textureViewDescriptor.baseMipLevel = 0;
+	textureViewDescriptor.mipLevelCount = 1;
+	textureViewDescriptor.dimension = wgpu::TextureViewDimension::_2D;
+	textureViewDescriptor.format = textureDescriptor.format;
+	wgpu::TextureView textureView = texture.createView(textureViewDescriptor);
+	if (textureView == nullptr) {
+		logger.Error("Failed to create texture view.");
+		return EXIT_FAILURE;
+	}
+
+	std::vector<wgpu::BindGroupEntry> bindings(2);
+
+	bindings[0].binding = 0;
+	bindings[0].buffer = uniformBuffer;
+	bindings[0].offset = 0;
+	bindings[0].size = sizeof(MyUniforms);
+
+	bindings[1].binding = 1;
+	bindings[1].textureView = textureView;
 
 	wgpu::BindGroupDescriptor bindGroupDescriptor{};
 	bindGroupDescriptor.layout = bindGroupLayouts[0];
-	bindGroupDescriptor.entryCount = 1;
-	bindGroupDescriptor.entries = &bindGroupEntry;
+	bindGroupDescriptor.entryCount = (uint32_t)(bindings.size());
+	bindGroupDescriptor.entries = bindings.data();
 	bindGroups.push_back(device.createBindGroup(bindGroupDescriptor));
 	if (bindGroups[0] == nullptr) {
 		logger.Error("Failed to create bind group.");
@@ -1052,8 +1128,6 @@ static int InitRenderPipeline() {
 
 	std::vector<wgpu::VertexBufferLayout> vertexBufferLayouts{};
 
-	wgpu::VertexBufferLayout vertexBufferLayout{};
-
 	std::vector<wgpu::VertexAttribute> vertexAttributes(3);
 
 	// position	attribute
@@ -1072,6 +1146,8 @@ static int InitRenderPipeline() {
 	vertexAttributes[2].offset = offsetof(VertexAttributes, color);
 
 	// actual data
+	wgpu::VertexBufferLayout vertexBufferLayout{};
+
 	vertexBufferLayout.attributeCount = static_cast<uint32_t>(vertexAttributes.size());
 	vertexBufferLayout.attributes = vertexAttributes.data();
 
@@ -1137,7 +1213,7 @@ int main() {
 	std::cout << "sizeof(Vector3): " << sizeof(Vector3) << " bytes" << std::endl;
 	std::cout << "sizeof(Vector4): " << sizeof(Vector4) << " bytes" << std::endl;
 
-	if (InitializeApp() == EXIT_FAILURE) return CleanOnExit(EXIT_FAILURE, "Failed to initialize application.", true);		
+	if (InitializeApp() == EXIT_FAILURE) return CleanOnExit(EXIT_FAILURE, "Failed to initialize application.", true);
 
 	std::vector<VertexAttributes> vertexData; /* = {
 		-0.5, -0.5, 1.0, 0.0, 0.0,
@@ -1147,12 +1223,12 @@ int main() {
 	};
 	*/
 
-	bool success = LoadGeometryFromOBJ("resources/mammoth.obj", vertexData);
+	bool success = LoadGeometryFromOBJ("resources/plane.obj", vertexData);
 	if (!success) {
 		return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
 	}
 
-	wgpu::BufferDescriptor bufferDesc {};
+	wgpu::BufferDescriptor bufferDesc{};
 	bufferDesc.label = "vertex_buffer";
 	bufferDesc.size = vertexData.size() * sizeof(VertexAttributes);
 	bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex;
@@ -1166,32 +1242,38 @@ int main() {
 
 	int indexCount = static_cast<int>(vertexData.size());
 
-	MyUniforms uniforms {};
+	MyUniforms uniforms{};
 	
-	Matrix4x4 S  = Matrix4x4::Scale(0.3f);
-	Matrix4x4 T1 = Matrix4x4::Translate(0.5f, 0.0f, 0.0f);
-	Matrix4x4 R1 = Matrix4x4::RotateZ(-(float)(SDL_GetTicks64()) / 1000.0f);
+	//Matrix4x4 S = Matrix4x4::Scale(0.3f);
+	//Matrix4x4 T1 = Matrix4x4::Translate(0.5f, 0.0f, 0.0f);
+	//Matrix4x4 R1 = Matrix4x4::RotateZ(-(float)(SDL_GetTicks64()) / 1000.0f);
+	 
+	uniforms.modelMatrix = Matrix4x4::Identity();
+	//uniforms.modelMatrix = Matrix4x4::Transpose(R1 * T1 * S);
 
-	//uniforms.modelMatrix = Matrix4x4::Identity();
-	uniforms.modelMatrix = Matrix4x4::Transpose(R1 * T1 * S);
-
-	Matrix4x4 T2 = Matrix4x4::Translate(0.0f, 0.0f, 2.0f);
-	Matrix4x4 R2 = Matrix4x4::RotateX(-2.0f * PI / 3.0f);
+	//Matrix4x4 T2 = Matrix4x4::Translate(0.0f, 0.0f, 2.0f);
+	//Matrix4x4 R2 = Matrix4x4::RotateX(-2.0f * PI / 3.0f);
 
 	//uniforms.viewMatrix = Matrix4x4::Identity();
-	uniforms.viewMatrix = Matrix4x4::Transpose(T2 * R2);
-
-	float ratio = 800.0f / 600.0f;
-	float focalLength = 2.0f;
-	float vfov = 53.0f * PI / 180.0f;
-	float near = 0.001f;
-	float far = 1000.0f;
-
-	//Matrix4x4 P = Matrix4x4::Orthographic(ratio, near, far));
-	Matrix4x4 P = Matrix4x4::Perspective(vfov, ratio, near, far);
-
-	uniforms.projectionMatrix = Matrix4x4::Transpose(P);
+	//uniforms.viewMatrix = Matrix4x4::Transpose(T2 * R2);
+	Matrix4x4 L = Matrix4x4::Transpose(Matrix4x4::LookAt(
+		Vector3(-0.5f, -2.5f, 2.0f), // eye
+		Vector3( 0.0f,  0.0f, 0.0f), // target
+		Vector3( 0.0f,  0.0f, 1.0f)  // up
+	));
 	
+	uniforms.viewMatrix = L; 
+
+	float ratio = windowWidth / windowHeight;
+	float vfov = 45.0f * PI / 180.0f;
+	float near = 0.01f;
+	float far = 100.0f;
+	
+	//Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4::Orthographic(ratio, near, far));
+	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4::Perspective(vfov, ratio, near, far));
+
+	uniforms.projectionMatrix = P;
+
 	uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 	uniforms.time = 1.0f;
 
@@ -1214,9 +1296,10 @@ int main() {
 		uniforms.time = -static_cast<float>(SDL_GetTicks()) / 1000;
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
-		R1 = Matrix4x4::RotateZ(uniforms.time);
-		uniforms.modelMatrix = Matrix4x4::Transpose(R1 * T1 * S);
-		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
+		//R1 = Matrix4x4::RotateZ(uniforms.time);
+		//uniforms.modelMatrix = Matrix4x4::Transpose(S);
+
+		//queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
 
 		wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
 		commandEncoderDescriptor.label = "command_encoder";
