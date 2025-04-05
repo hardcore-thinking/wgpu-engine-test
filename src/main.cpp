@@ -21,6 +21,7 @@
 #include <tiny_obj_loader.h>
 
 #include <Matrix4x4.hpp>
+#include <Vector2.hpp>
 #include <Vector3.hpp>
 #include <Vector4.hpp>
 
@@ -60,6 +61,7 @@ struct VertexAttributes {
 	Vector3 position{};
 	Vector3 normal{};
 	Vector3 color{};
+	Vector2 uv{};
 };
 
 Logger logger{};
@@ -716,6 +718,11 @@ static bool LoadGeometryFromOBJ(std::filesystem::path const& path, std::vector<V
 				 attrib.colors[3 * idx.vertex_index + 1],
 				 attrib.colors[3 * idx.vertex_index + 2]
 			};
+
+			vertexData[i].uv = {
+				 attrib.texcoords[2 * idx.texcoord_index + 0],
+				 1 - attrib.texcoords[2 * idx.texcoord_index + 1]
+			};
 		}
 	}
 
@@ -807,14 +814,14 @@ static int InitDevice() {
 	requiredLimits.limits.maxTextureDimension2D = windowWidth;
 	requiredLimits.limits.maxTextureArrayLayers = 1;
 
-	requiredLimits.limits.maxVertexAttributes = 3;
+	requiredLimits.limits.maxVertexAttributes = 4;
 	requiredLimits.limits.maxVertexBuffers = 1;
 	requiredLimits.limits.maxBufferSize = 1000000 * sizeof(VertexAttributes);
 	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(VertexAttributes);
-	requiredLimits.limits.maxInterStageShaderComponents = 6;
+	requiredLimits.limits.maxInterStageShaderComponents = 8;
 	requiredLimits.limits.maxBindGroups = 1;
 	requiredLimits.limits.maxUniformBuffersPerShaderStage = 1;
-	requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
+	requiredLimits.limits.maxUniformBufferBindingSize = static_cast<uint64_t>(16ULL * 4 * sizeof(float));
 	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 	requiredLimits.limits.maxSampledTexturesPerShaderStage = 1;
 	requiredLimits.limits.maxBindingsPerBindGroup = 2;
@@ -1044,6 +1051,7 @@ static int InitRenderPipeline() {
 		return EXIT_FAILURE;
 	}
 
+	/*
 	std::vector<uint8_t> pixels(4 * textureDescriptor.size.width * textureDescriptor.size.height);
 	for (uint32_t i = 0; i < textureDescriptor.size.width; ++i) {
 		for (uint32_t j = 0; j < textureDescriptor.size.height; ++j) {
@@ -1052,6 +1060,18 @@ static int InitRenderPipeline() {
 			p[1] = (uint8_t)j; // g
 			p[2] = 128;        // b
 			p[3] = 255;        // a
+		}
+	}
+	*/
+
+	std::vector<uint8_t> pixels(4 * textureDescriptor.size.width * textureDescriptor.size.height);
+	for (uint32_t i = 0; i < textureDescriptor.size.width; ++i) {
+		for (uint32_t j = 0; j < textureDescriptor.size.height; ++j) {
+			uint8_t* p = &pixels[static_cast<size_t>(4ULL * (j * textureDescriptor.size.width + i))];
+			p[0] = (i / 16) % 2 == (j / 16) % 2 ? 255 : 0; // r
+			p[1] = ((i - j) / 16) % 2 == 0 ? 255 : 0; // g
+			p[2] = ((i + j) / 16) % 2 == 0 ? 255 : 0; // b
+			p[3] = 255; // a
 		}
 	}
 
@@ -1066,7 +1086,7 @@ static int InitRenderPipeline() {
 	source.bytesPerRow = 4 * textureDescriptor.size.width;
 	source.rowsPerImage = textureDescriptor.size.height;
 
-	queue.writeTexture(destination, pixels.data(), 4 * textureDescriptor.size.width * textureDescriptor.size.height, source, textureDescriptor.size);
+	queue.writeTexture(destination, pixels.data(), static_cast<size_t>(4ULL * textureDescriptor.size.width * textureDescriptor.size.height), source, textureDescriptor.size);
 
 	wgpu::TextureViewDescriptor textureViewDescriptor {};
 	textureViewDescriptor.aspect = wgpu::TextureAspect::All;
@@ -1128,7 +1148,7 @@ static int InitRenderPipeline() {
 
 	std::vector<wgpu::VertexBufferLayout> vertexBufferLayouts{};
 
-	std::vector<wgpu::VertexAttribute> vertexAttributes(3);
+	std::vector<wgpu::VertexAttribute> vertexAttributes(4);
 
 	// position	attribute
 	vertexAttributes[0].shaderLocation = 0;
@@ -1144,6 +1164,11 @@ static int InitRenderPipeline() {
 	vertexAttributes[2].shaderLocation = 2;
 	vertexAttributes[2].format = wgpu::VertexFormat::Float32x3;
 	vertexAttributes[2].offset = offsetof(VertexAttributes, color);
+
+	// uv attribute
+	vertexAttributes[3].shaderLocation = 3;
+	vertexAttributes[3].format = wgpu::VertexFormat::Float32x2;
+	vertexAttributes[3].offset = offsetof(VertexAttributes, uv);
 
 	// actual data
 	wgpu::VertexBufferLayout vertexBufferLayout{};
@@ -1209,10 +1234,6 @@ static int InitializeApp() {
 }
 
 int main() {
-	std::cout << "sizeof(Matrix4x4): " << sizeof(Matrix4x4) << " bytes" << std::endl;
-	std::cout << "sizeof(Vector3): " << sizeof(Vector3) << " bytes" << std::endl;
-	std::cout << "sizeof(Vector4): " << sizeof(Vector4) << " bytes" << std::endl;
-
 	if (InitializeApp() == EXIT_FAILURE) return CleanOnExit(EXIT_FAILURE, "Failed to initialize application.", true);
 
 	std::vector<VertexAttributes> vertexData; /* = {
@@ -1223,7 +1244,7 @@ int main() {
 	};
 	*/
 
-	bool success = LoadGeometryFromOBJ("resources/plane.obj", vertexData);
+	bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
 	if (!success) {
 		return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
 	}
@@ -1257,7 +1278,7 @@ int main() {
 	//uniforms.viewMatrix = Matrix4x4::Identity();
 	//uniforms.viewMatrix = Matrix4x4::Transpose(T2 * R2);
 	Matrix4x4 L = Matrix4x4::Transpose(Matrix4x4::LookAt(
-		Vector3(-0.5f, -2.5f, 2.0f), // eye
+		Vector3(-2.0f, -3.0f, 2.0f), // eye
 		Vector3( 0.0f,  0.0f, 0.0f), // target
 		Vector3( 0.0f,  0.0f, 1.0f)  // up
 	));
@@ -1316,7 +1337,7 @@ int main() {
 		renderPassColorAttachments[0].resolveTarget = nullptr;
 		renderPassColorAttachments[0].storeOp = wgpu::StoreOp::Store;
 		renderPassColorAttachments[0].view = textureView;
-		renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.1f, 0.1f, 0.1f, 1.0f };
+		renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.05f, 0.05f, 0.05f, 1.0f };
 
 		std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments {};
 		renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment {});

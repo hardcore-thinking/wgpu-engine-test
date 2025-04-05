@@ -13,12 +13,14 @@ struct VertexInput {
 	@location(0) position: vec3f,
 	@location(1) normal: vec3f,
 	@location(2) color: vec3f,
+	@location(3) uv: vec2f,
 };
 
 struct VertexOutput {
 	@builtin(position) position: vec4f,
 	@location(0) color: vec3f,
 	@location(1) normal: vec3f,
+	@location(2) uv: vec2f,
 };
 
 @vertex fn vert_main(in: VertexInput) -> VertexOutput {
@@ -26,6 +28,7 @@ struct VertexOutput {
 	out.position = myUniforms.projectionMatrix * myUniforms.viewMatrix * myUniforms.modelMatrix * vec4f(in.position, 1.0);
 	out.normal = (myUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
 	out.color = in.color;
+	out.uv = in.uv;
 	return out;
 }
 
@@ -39,7 +42,8 @@ struct VertexOutput {
 	//let shading2 = max(0.0, dot(lightDirection2, normal));
 	//let shading = shading1 * lightColor1 + shading2 * lightColor2;
 	//let color = in.color * shading;
-	let color = textureLoad(gradientTexture, vec2i(in.position.xy), 0).rgb;
+	let texelCoords = vec2i(in.uv * vec2f(textureDimensions(gradientTexture)));
+	let color = textureLoad(gradientTexture, texelCoords, 0).rgb;
 	let linear_color = pow(color, vec3f(2.2));
 	return vec4f(linear_color, myUniforms.color.a);
 }
