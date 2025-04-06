@@ -1,40 +1,47 @@
 #ifndef VECTOR4_HPP
 #define VECTOR4_HPP
 
+#include <iostream>
+#include <iomanip>
 #include <cmath>
 
-class Vector4 {
-	public:
-		Vector4();
-		Vector4(float x, float y, float z, float w);
-		~Vector4() = default;
-	
-	public:
-		float X() const;
-		float Y() const;
-		float Z() const;
-		float W() const;
+namespace Math {
+	class Vector4 {
+		public:
+			Vector4();
+			Vector4(float c);
+			Vector4(float x, float y, float z, float w);
+			~Vector4() = default;
 
-		float R() const;
-		float G() const;
-		float B() const;
-		float A() const;
+		public:
+			float X() const { return _x; }
+			float Y() const { return _y; }
+			float Z() const { return _z; }
+			float W() const { return _w; }
 
-		Vector4 operator+(Vector4 const& other) const;
-		Vector4 operator-() const;
-		Vector4 operator-(Vector4 const& other) const;
-		Vector4 operator*(float scalar) const;
-		Vector4 operator/(float scalar) const;
+			float R() const { return _x; }
+			float G() const { return _y; }
+			float B() const { return _z; }
+			float A() const { return _w; }
 
-		float Magnitude() const;
+			Vector4 operator+(Vector4 const& other) const;
+			Vector4 operator-() const;
+			Vector4 operator-(Vector4 const& other) const;
+			Vector4 operator*(float scalar) const;
+			Vector4 operator/(float scalar) const;
 
-		static float Dot(Vector4 const& a, Vector4 const& b);
+			friend std::ostream& operator<<(std::ostream& os, Vector4 const& vec);
 
-	private:
-		float _x = 0.0f;
-		float _y = 0.0f;
-		float _z = 0.0f;
-		float _w = 0.0f;
-};
+			float Magnitude() const;
+
+			static float Dot(Vector4 const& a, Vector4 const& b);
+
+		private:
+			float _x = 0.0f;
+			float _y = 0.0f;
+			float _z = 0.0f;
+			float _w = 0.0f;
+	};
+}
 
 #endif // !VECTOR4_HPP

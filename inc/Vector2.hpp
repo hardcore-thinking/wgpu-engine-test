@@ -5,35 +5,38 @@
 #include <iomanip>
 #include <cmath>
 
-class Vector2 {
-	public:
-		Vector2();
-		Vector2(float x, float y);
-		~Vector2() = default;
+namespace Math {
+	class Vector2 {
+		public:
+			Vector2();
+			Vector2(float c);
+			Vector2(float x, float y);
+			~Vector2() = default;
 
-	public:
-		float X() const;
-		float Y() const;
+		public:
+			float X() const { return _x; }
+			float Y() const { return _y; }
 
-		float U() const;
-		float V() const;
+			float U() const { return _x; }
+			float V() const { return _y; }
 
-		Vector2 operator+(Vector2 const& other) const;
-		Vector2 operator-(Vector2 const& other) const;
-		Vector2 operator-() const;
-		Vector2 operator*(float scalar) const;
-		Vector2 operator/(float scalar) const;
+			Vector2 operator+(Vector2 const& other) const;
+			Vector2 operator-(Vector2 const& other) const;
+			Vector2 operator-() const;
+			Vector2 operator*(float scalar) const;
+			Vector2 operator/(float scalar) const;
 
-		friend std::ostream& operator<<(std::ostream& os, Vector2 const& vec);
+			friend std::ostream& operator<<(std::ostream& os, Vector2 const& vec);
 
-		float Magnitude() const;
+			float Magnitude() const;
 
-		static Vector2 Normalize(Vector2 const& vec);
-		static float Dot(Vector2 const& a, Vector2 const& b);
+			static Vector2 Normalize(Vector2 const& vec);
+			static float Dot(Vector2 const& a, Vector2 const& b);
 
-	private:
-		float _x = 0.0f;
-		float _y = 0.0f;
-};
+		private:
+			float _x = 0.0f;
+			float _y = 0.0f;
+		};
+}
 
 #endif // !VECTOR2_HPP
