@@ -20,48 +20,33 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-#include <Matrix4x4.hpp>
-#include <Vector2.hpp>
-#include <Vector3.hpp>
-#include <Vector4.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#include <Logger.hpp>
+#include <Math.hpp>
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
 constexpr float windowWidth = 640.0f;
 constexpr float windowHeight = 480.0f;
 
-class Logger {
-	public:
-		Logger() = default;
-		~Logger() = default;
-
-		void Info(std::string message) const {
-			std::cout << "INFO : " << message << std::endl;
-		};
-
-		void Warn(std::string message) const {
-			std::cout << "WARNING: " << message << std::endl;
-		};
-
-		void Error(std::string message) const {
-			std::cerr << "ERROR: " << message << std::endl;
-		}
-};
-
 struct MyUniforms {
-	Matrix4x4 projectionMatrix{};
-	Matrix4x4 viewMatrix{};
-	Matrix4x4 modelMatrix{};
-	Vector4 color{};
+	Math::Matrix4x4 projectionMatrix{};
+	Math::Matrix4x4 viewMatrix{};
+	Math::Matrix4x4 modelMatrix{};
+	Math::Vector4 color{};
+	Math::Vector3 cameraPosition{};
 	float time = 0.0f;
-	float _pad[3];
 };
+
+static_assert(sizeof(MyUniforms) % 16 == 0, "MyUniforms must be aligned to 16 bytes.");
 
 struct VertexAttributes {
-	Vector3 position{};
-	Vector3 normal{};
-	Vector3 color{};
-	Vector2 uv{};
+	Math::Vector3 position{};
+	Math::Vector3 normal{};
+	Math::Vector3 color{};
+	Math::Vector2 uv{};
 };
 
 Logger logger{};
@@ -92,6 +77,7 @@ uint32_t uniformStride = 0;
 wgpu::Texture depthTexture = nullptr;
 wgpu::TextureView depthTextureView = nullptr;
 wgpu::Texture texture = nullptr;
+wgpu::Sampler sampler = nullptr;
 
 auto CleanOnExit = [&](int code, std::string message = "", bool error = false) -> int {
 	if (error) {
@@ -202,6 +188,145 @@ auto CleanOnExit = [&](int code, std::string message = "", bool error = false) -
 	return code;
 	};
 bool running = false;
+
+static wgpu::BindGroupLayoutEntry CreateBufferBindingLayout(uint32_t binding, wgpu::ShaderStageFlags visibility, wgpu::BufferBindingType type, uint32_t size, uint32_t minBindingSize, bool hasDynamicOffset = false, wgpu::ChainedStruct const* nextInChain = nullptr) {
+	wgpu::BindGroupLayoutEntry bindGroupLayoutEntry {};
+
+	bindGroupLayoutEntry.binding = binding;
+	bindGroupLayoutEntry.visibility = visibility;
+
+	bindGroupLayoutEntry.buffer.hasDynamicOffset = hasDynamicOffset;
+	bindGroupLayoutEntry.buffer.minBindingSize = minBindingSize;
+	bindGroupLayoutEntry.buffer.type = type;
+
+	bindGroupLayoutEntry.buffer.nextInChain = nextInChain;
+
+	return bindGroupLayoutEntry;
+}
+
+static wgpu::BindGroupLayoutEntry CreateTextureBindingLayout(uint32_t binding, wgpu::ShaderStageFlags visibility, wgpu::TextureSampleType sampleType, wgpu::TextureViewDimension viewDimension, bool multisampled = false, wgpu::ChainedStruct const* nextInChain = nullptr) {
+	wgpu::BindGroupLayoutEntry bindGroupLayoutEntry {};
+
+	bindGroupLayoutEntry.binding = binding;
+	bindGroupLayoutEntry.visibility = visibility;
+
+	bindGroupLayoutEntry.texture.multisampled = multisampled;
+	bindGroupLayoutEntry.texture.sampleType = sampleType;
+	bindGroupLayoutEntry.texture.viewDimension = viewDimension;
+
+	bindGroupLayoutEntry.texture.nextInChain = nextInChain;
+	
+	return bindGroupLayoutEntry;
+}
+
+static wgpu::BindGroupLayoutEntry CreateSamplerBindingLayout(uint32_t binding, wgpu::ShaderStageFlags visibility, wgpu::SamplerBindingType type, wgpu::ChainedStruct const* nextInChain = nullptr) {
+	wgpu::BindGroupLayoutEntry bindGroupLayoutEntry {};
+
+	bindGroupLayoutEntry.binding = binding;
+	bindGroupLayoutEntry.visibility = visibility;
+	
+	bindGroupLayoutEntry.sampler.type = type;
+
+	bindGroupLayoutEntry.sampler.nextInChain = nextInChain;
+
+	return bindGroupLayoutEntry;
+}
+
+static void EditBufferBindingLayout(wgpu::BindGroupLayoutEntry& bindGroupLayoutEntry, uint32_t binding, wgpu::ShaderStageFlags visibility, wgpu::BufferBindingType type, uint32_t size, uint32_t minBindingSize, bool hasDynamicOffset = false, wgpu::ChainedStruct const* nextInChain = nullptr) {
+	bindGroupLayoutEntry.binding = binding;
+	bindGroupLayoutEntry.visibility = visibility;
+
+	bindGroupLayoutEntry.buffer.hasDynamicOffset = hasDynamicOffset;
+	bindGroupLayoutEntry.buffer.minBindingSize = minBindingSize;
+	bindGroupLayoutEntry.buffer.type = type;
+
+	bindGroupLayoutEntry.buffer.nextInChain = nextInChain;
+}
+
+static void EditTextureBindingLayout(wgpu::BindGroupLayoutEntry& bindGroupLayoutEntry, uint32_t binding, wgpu::ShaderStageFlags visibility, wgpu::TextureSampleType sampleType, wgpu::TextureViewDimension viewDimension, bool multisampled = false, wgpu::ChainedStruct const* nextInChain = nullptr) {
+	bindGroupLayoutEntry.binding = binding;
+	bindGroupLayoutEntry.visibility = visibility;
+
+	bindGroupLayoutEntry.texture.multisampled = multisampled;
+	bindGroupLayoutEntry.texture.sampleType = sampleType;
+	bindGroupLayoutEntry.texture.viewDimension = viewDimension;
+	
+	bindGroupLayoutEntry.texture.nextInChain = nextInChain;
+}
+
+static void EditSamplerBindingLayout(wgpu::BindGroupLayoutEntry& bindGroupLayoutEntry, uint32_t binding, wgpu::ShaderStageFlags visibility, wgpu::SamplerBindingType type, wgpu::ChainedStruct const* nextInChain = nullptr) {
+	bindGroupLayoutEntry.binding = binding;
+	bindGroupLayoutEntry.visibility = visibility;
+
+	bindGroupLayoutEntry.sampler.type = type;
+	
+	bindGroupLayoutEntry.sampler.nextInChain = nextInChain;
+}
+
+static wgpu::BindGroupEntry CreateBufferBinding(uint32_t binding, wgpu::Buffer& buffer, uint32_t size, uint32_t offset = 0) {
+	wgpu::BindGroupEntry bindGroupEntry{};
+	
+	bindGroupEntry.binding = binding;
+	bindGroupEntry.buffer = buffer;
+	bindGroupEntry.size = size;
+	bindGroupEntry.offset = offset;
+
+	return bindGroupEntry;
+}
+
+static wgpu::BindGroupEntry CreateTextureBinding(uint32_t binding, wgpu::TextureView& textureView) {
+	wgpu::BindGroupEntry bindGroupEntry{};
+	
+	bindGroupEntry.binding = binding;
+	bindGroupEntry.textureView = textureView;
+
+	return bindGroupEntry;
+}
+
+static wgpu::BindGroupEntry CreateSamplerBinding(uint32_t binding, wgpu::Sampler& sampler) {
+	wgpu::BindGroupEntry bindGroupEntry{};
+
+	bindGroupEntry.binding = binding;
+	bindGroupEntry.sampler = sampler;
+
+	return bindGroupEntry;
+}
+
+static void EditBufferBinding(wgpu::BindGroupEntry& bindGroupEntry, uint32_t binding, wgpu::Buffer& buffer, uint32_t size, uint32_t offset = 0) {
+	bindGroupEntry.binding = binding;
+
+	bindGroupEntry.buffer = buffer;
+	bindGroupEntry.size = size;
+	bindGroupEntry.offset = offset;
+}
+
+static void EditTextureBinding(wgpu::BindGroupEntry& bindGroupEntry, uint32_t binding, wgpu::TextureView& textureView) {
+	bindGroupEntry.binding = binding;
+
+	bindGroupEntry.textureView = textureView;
+}
+
+static void EditSamplerBinding(wgpu::BindGroupEntry& bindGroupEntry, uint32_t binding, wgpu::Sampler& sampler) {
+	bindGroupEntry.binding = binding;
+
+	bindGroupEntry.sampler = sampler;
+}
+
+static wgpu::VertexAttribute CreateVertexAttribute(uint32_t location, wgpu::VertexFormat format, uint32_t offset) {
+	wgpu::VertexAttribute vertexAttribute{};
+
+	vertexAttribute.shaderLocation = location;
+	vertexAttribute.format = format;
+	vertexAttribute.offset = offset;
+
+	return vertexAttribute;
+}
+
+static void EditVertexAttribute(wgpu::VertexAttribute& vertexAttribute, uint32_t location, wgpu::VertexFormat format, uint32_t offset) {
+	vertexAttribute.shaderLocation = location;
+	vertexAttribute.format = format;
+	vertexAttribute.offset = offset;
+}
 
 static uint32_t CeilToNextMultiple(uint32_t value, uint32_t step) {
 	uint32_t divideAndCeil = value / step + (value % step == 0 ? 0 : 1);
@@ -825,6 +950,7 @@ static int InitDevice() {
 	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 	requiredLimits.limits.maxSampledTexturesPerShaderStage = 1;
 	requiredLimits.limits.maxBindingsPerBindGroup = 2;
+	requiredLimits.limits.maxSamplersPerShaderStage = 1;
 
 	requiredLimits.limits.minStorageBufferOffsetAlignment = adapterSupportedLimits.limits.minStorageBufferOffsetAlignment;
 	requiredLimits.limits.minUniformBufferOffsetAlignment = adapterSupportedLimits.limits.minUniformBufferOffsetAlignment;
@@ -897,16 +1023,16 @@ static int InitQueue() {
 	return EXIT_SUCCESS;
 }
 
-static int InitRenderPipeline() {
+static int InitRenderPipeline(std::vector<wgpu::VertexBufferLayout> const& vertexBufferLayouts, std::vector<wgpu::BindGroupLayoutEntry> const& bindGroupLayoutEntries, std::vector<wgpu::BindGroupEntry> const& bindGroupEntries) {
 	logger.Info("Creating render pipeline...");
 
-	wgpu::StencilFaceState stencilBackFaceState{};
+	wgpu::StencilFaceState stencilBackFaceState {};
 	stencilBackFaceState.compare = wgpu::CompareFunction::Always;
 	stencilBackFaceState.depthFailOp = wgpu::StencilOperation::Keep;
 	stencilBackFaceState.failOp = wgpu::StencilOperation::Keep;
 	stencilBackFaceState.passOp = wgpu::StencilOperation::Keep;
 
-	wgpu::StencilFaceState stencilFrontFaceState{};
+	wgpu::StencilFaceState stencilFrontFaceState {};
 	stencilFrontFaceState.compare = wgpu::CompareFunction::Always;
 	stencilFrontFaceState.depthFailOp = wgpu::StencilOperation::Keep;
 	stencilFrontFaceState.failOp = wgpu::StencilOperation::Keep;
@@ -914,7 +1040,7 @@ static int InitRenderPipeline() {
 
 	wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
 
-	wgpu::DepthStencilState depthStencilState{};
+	wgpu::DepthStencilState depthStencilState {};
 	depthStencilState.depthBias = 0;
 	depthStencilState.depthBiasClamp = 0.0f;
 	depthStencilState.depthBiasSlopeScale = 0.0f;
@@ -927,7 +1053,7 @@ static int InitRenderPipeline() {
 	depthStencilState.stencilReadMask = 0;
 	depthStencilState.stencilWriteMask = 0;
 
-	wgpu::TextureDescriptor depthTextureDescriptor{};
+	wgpu::TextureDescriptor depthTextureDescriptor {};
 	depthTextureDescriptor.dimension = wgpu::TextureDimension::_2D;
 	depthTextureDescriptor.format = depthTextureFormat;
 	depthTextureDescriptor.mipLevelCount = 1;
@@ -942,7 +1068,7 @@ static int InitRenderPipeline() {
 		return EXIT_FAILURE;
 	}
 
-	wgpu::TextureViewDescriptor depthTextureViewDescriptor{};
+	wgpu::TextureViewDescriptor depthTextureViewDescriptor {};
 	depthTextureViewDescriptor.aspect = wgpu::TextureAspect::DepthOnly;
 	depthTextureViewDescriptor.baseArrayLayer = 0;
 	depthTextureViewDescriptor.arrayLayerCount = 1;
@@ -956,11 +1082,10 @@ static int InitRenderPipeline() {
 		return EXIT_FAILURE;
 	}
 
-	std::vector<wgpu::ConstantEntry> fragmentConstantEntries{};
+	std::vector<wgpu::ConstantEntry> fragmentConstantEntries {};
+	std::vector<wgpu::ShaderModuleCompilationHint> fragmentShaderModuleCompilationHints {};
 
-	std::vector<wgpu::ShaderModuleCompilationHint> fragmentShaderModuleCompilationHints{};
-
-	wgpu::ChainedStruct fragmentShaderModuleChainedStruct{};
+	wgpu::ChainedStruct fragmentShaderModuleChainedStruct {};
 	fragmentShaderModuleChainedStruct.next = nullptr;
 	fragmentShaderModuleChainedStruct.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
 
@@ -970,28 +1095,28 @@ static int InitRenderPipeline() {
 		return EXIT_FAILURE;
 	}
 
-	wgpu::BlendComponent colorComponent{};
+	wgpu::BlendComponent colorComponent {};
 	colorComponent.dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha;
 	colorComponent.operation = wgpu::BlendOperation::Add;
 	colorComponent.srcFactor = wgpu::BlendFactor::SrcAlpha;
 
-	wgpu::BlendComponent alphaComponent{};
+	wgpu::BlendComponent alphaComponent {};
 	alphaComponent.dstFactor = wgpu::BlendFactor::One;
 	alphaComponent.operation = wgpu::BlendOperation::Add;
 	alphaComponent.srcFactor = wgpu::BlendFactor::Zero;
 
-	wgpu::BlendState blendState{};
+	wgpu::BlendState blendState {};
 	blendState.alpha = alphaComponent;
 	blendState.color = colorComponent;
 
-	std::vector<wgpu::ColorTargetState> colorTargetStates{};
+	std::vector<wgpu::ColorTargetState> colorTargetStates {};
 	colorTargetStates.resize(1, wgpu::ColorTargetState{});
 	colorTargetStates[0].blend = &blendState;
 	colorTargetStates[0].format = surface.getPreferredFormat(adapter);
 	colorTargetStates[0].nextInChain = nullptr;
 	colorTargetStates[0].writeMask = wgpu::ColorWriteMask::All;
 
-	wgpu::FragmentState fragmentState{};
+	wgpu::FragmentState fragmentState {};
 	fragmentState.constantCount = fragmentConstantEntries.size();
 	fragmentState.constants = fragmentConstantEntries.data();
 	fragmentState.entryPoint = "frag_main";
@@ -999,22 +1124,6 @@ static int InitRenderPipeline() {
 	fragmentState.nextInChain = nullptr;
 	fragmentState.targetCount = colorTargetStates.size();
 	fragmentState.targets = colorTargetStates.data();
-
-	std::vector<wgpu::BindGroupLayoutEntry> bindGroupLayoutEntries(2, wgpu::Default);
-	
-	wgpu::BindGroupLayoutEntry& bindingLayout = bindGroupLayoutEntries[0];
-	bindingLayout.binding = 0;
-	bindingLayout.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
-	bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
-	bindingLayout.buffer.minBindingSize = sizeof(MyUniforms);
-	bindingLayout.buffer.hasDynamicOffset = false;
-	bindingLayout.buffer.nextInChain = nullptr;
-
-	wgpu::BindGroupLayoutEntry& textureBindingLayout = bindGroupLayoutEntries[1];
-	textureBindingLayout.binding = 1;
-	textureBindingLayout.visibility = wgpu::ShaderStage::Fragment;
-	textureBindingLayout.texture.sampleType = wgpu::TextureSampleType::Float;
-	textureBindingLayout.texture.viewDimension = wgpu::TextureViewDimension::_2D;
 
 	wgpu::BindGroupLayoutDescriptor bindGroupLayoutDescriptor {};
 	bindGroupLayoutDescriptor.entryCount = bindGroupLayoutEntries.size();
@@ -1024,105 +1133,18 @@ static int InitRenderPipeline() {
 		logger.Error("Failed to create bind group layout.");
 		return EXIT_FAILURE;
 	}
-
-	wgpu::BufferDescriptor bufferDesc {};
-	bufferDesc.label = "uniform_buffer";
-	bufferDesc.size = sizeof(MyUniforms);
-	bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
-	bufferDesc.mappedAtCreation = false;
-	uniformBuffer = device.createBuffer(bufferDesc);
-	if (uniformBuffer == nullptr) {
-		logger.Error("Failed to create uniform buffer.");
-		return EXIT_FAILURE;
-	}
-
-	wgpu::TextureDescriptor textureDescriptor{};
-	textureDescriptor.dimension = wgpu::TextureDimension::_2D;
-	textureDescriptor.size = { 256, 256, 1 };
-	textureDescriptor.mipLevelCount = 1;
-	textureDescriptor.sampleCount = 1;
-	textureDescriptor.format = wgpu::TextureFormat::RGBA8Unorm;
-	textureDescriptor.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
-	textureDescriptor.viewFormatCount = 0;
-	textureDescriptor.viewFormats = nullptr;
-	texture = device.createTexture(textureDescriptor);
-	if (texture == nullptr) {
-		logger.Error("Failed to create texture.");
-		return EXIT_FAILURE;
-	}
-
-	/*
-	std::vector<uint8_t> pixels(4 * textureDescriptor.size.width * textureDescriptor.size.height);
-	for (uint32_t i = 0; i < textureDescriptor.size.width; ++i) {
-		for (uint32_t j = 0; j < textureDescriptor.size.height; ++j) {
-			uint8_t* p = &pixels[4 * (j * textureDescriptor.size.width + i)];
-			p[0] = (uint8_t)i; // r
-			p[1] = (uint8_t)j; // g
-			p[2] = 128;        // b
-			p[3] = 255;        // a
-		}
-	}
-	*/
-
-	std::vector<uint8_t> pixels(4 * textureDescriptor.size.width * textureDescriptor.size.height);
-	for (uint32_t i = 0; i < textureDescriptor.size.width; ++i) {
-		for (uint32_t j = 0; j < textureDescriptor.size.height; ++j) {
-			uint8_t* p = &pixels[static_cast<size_t>(4ULL * (j * textureDescriptor.size.width + i))];
-			p[0] = (i / 16) % 2 == (j / 16) % 2 ? 255 : 0; // r
-			p[1] = ((i - j) / 16) % 2 == 0 ? 255 : 0; // g
-			p[2] = ((i + j) / 16) % 2 == 0 ? 255 : 0; // b
-			p[3] = 255; // a
-		}
-	}
-
-	wgpu::ImageCopyTexture destination {};
-	destination.texture = texture;
-	destination.mipLevel = 0;
-	destination.origin = { 0, 0, 0 };
-	destination.aspect = wgpu::TextureAspect::All;
-
-	wgpu::TextureDataLayout source {};
-	source.offset = 0;
-	source.bytesPerRow = 4 * textureDescriptor.size.width;
-	source.rowsPerImage = textureDescriptor.size.height;
-
-	queue.writeTexture(destination, pixels.data(), static_cast<size_t>(4ULL * textureDescriptor.size.width * textureDescriptor.size.height), source, textureDescriptor.size);
-
-	wgpu::TextureViewDescriptor textureViewDescriptor {};
-	textureViewDescriptor.aspect = wgpu::TextureAspect::All;
-	textureViewDescriptor.baseArrayLayer = 0;
-	textureViewDescriptor.arrayLayerCount = 1;
-	textureViewDescriptor.baseMipLevel = 0;
-	textureViewDescriptor.mipLevelCount = 1;
-	textureViewDescriptor.dimension = wgpu::TextureViewDimension::_2D;
-	textureViewDescriptor.format = textureDescriptor.format;
-	wgpu::TextureView textureView = texture.createView(textureViewDescriptor);
-	if (textureView == nullptr) {
-		logger.Error("Failed to create texture view.");
-		return EXIT_FAILURE;
-	}
-
-	std::vector<wgpu::BindGroupEntry> bindings(2);
-
-	bindings[0].binding = 0;
-	bindings[0].buffer = uniformBuffer;
-	bindings[0].offset = 0;
-	bindings[0].size = sizeof(MyUniforms);
-
-	bindings[1].binding = 1;
-	bindings[1].textureView = textureView;
-
-	wgpu::BindGroupDescriptor bindGroupDescriptor{};
+	
+	wgpu::BindGroupDescriptor bindGroupDescriptor {};
 	bindGroupDescriptor.layout = bindGroupLayouts[0];
-	bindGroupDescriptor.entryCount = (uint32_t)(bindings.size());
-	bindGroupDescriptor.entries = bindings.data();
+	bindGroupDescriptor.entryCount = (uint32_t)(bindGroupEntries.size());
+	bindGroupDescriptor.entries = bindGroupEntries.data();
 	bindGroups.push_back(device.createBindGroup(bindGroupDescriptor));
 	if (bindGroups[0] == nullptr) {
 		logger.Error("Failed to create bind group.");
 		return EXIT_FAILURE;
 	}
 
-	wgpu::PipelineLayoutDescriptor pipelineLayoutDescriptor{};
+	wgpu::PipelineLayoutDescriptor pipelineLayoutDescriptor {};
 	pipelineLayoutDescriptor.bindGroupLayoutCount = bindGroupLayouts.size();
 	pipelineLayoutDescriptor.bindGroupLayouts = (WGPUBindGroupLayout*)(bindGroupLayouts.data());
 	pipelineLayoutDescriptor.label = "pipeline_layout";
@@ -1133,58 +1155,21 @@ static int InitRenderPipeline() {
 		return EXIT_FAILURE;
 	}
 
-	wgpu::MultisampleState multisampleState{};
+	wgpu::MultisampleState multisampleState {};
 	multisampleState.alphaToCoverageEnabled = false;
 	multisampleState.count = 1;
 	multisampleState.mask = 0xFFFFFFFF;
 	multisampleState.nextInChain = nullptr;
 
-	wgpu::PrimitiveState primitiveState{};
+	wgpu::PrimitiveState primitiveState {};
 	primitiveState.cullMode = wgpu::CullMode::None;
 	primitiveState.frontFace = wgpu::FrontFace::CCW;
 	primitiveState.nextInChain = nullptr;
 	primitiveState.stripIndexFormat = wgpu::IndexFormat::Undefined;
 	primitiveState.topology = wgpu::PrimitiveTopology::TriangleList;
 
-	std::vector<wgpu::VertexBufferLayout> vertexBufferLayouts{};
-
-	std::vector<wgpu::VertexAttribute> vertexAttributes(4);
-
-	// position	attribute
-	vertexAttributes[0].shaderLocation = 0;
-	vertexAttributes[0].format = wgpu::VertexFormat::Float32x3;
-	vertexAttributes[0].offset = offsetof(VertexAttributes, position);
-
-	// normal attribute
-	vertexAttributes[1].shaderLocation = 1;
-	vertexAttributes[1].format = wgpu::VertexFormat::Float32x3;
-	vertexAttributes[1].offset = offsetof(VertexAttributes, normal);
-
-	// color attribute
-	vertexAttributes[2].shaderLocation = 2;
-	vertexAttributes[2].format = wgpu::VertexFormat::Float32x3;
-	vertexAttributes[2].offset = offsetof(VertexAttributes, color);
-
-	// uv attribute
-	vertexAttributes[3].shaderLocation = 3;
-	vertexAttributes[3].format = wgpu::VertexFormat::Float32x2;
-	vertexAttributes[3].offset = offsetof(VertexAttributes, uv);
-
-	// actual data
-	wgpu::VertexBufferLayout vertexBufferLayout{};
-
-	vertexBufferLayout.attributeCount = static_cast<uint32_t>(vertexAttributes.size());
-	vertexBufferLayout.attributes = vertexAttributes.data();
-
-	// data stride and stepthrough method
-	vertexBufferLayout.arrayStride = sizeof(VertexAttributes);
-	vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
-
-	vertexBufferLayouts.push_back(vertexBufferLayout);
-
-	std::vector<wgpu::ConstantEntry> vertexConstantEntries{};
-
-	std::vector<wgpu::ShaderModuleCompilationHint> vertexShaderModuleCompilationHints{};
+	std::vector<wgpu::ConstantEntry> vertexConstantEntries {};
+	std::vector<wgpu::ShaderModuleCompilationHint> vertexShaderModuleCompilationHints {};
 
 	vertexShaderModule = LoadShaderModule("resources/shader.wgsl", device);
 	if (vertexShaderModule == nullptr) {
@@ -1192,7 +1177,7 @@ static int InitRenderPipeline() {
 		return EXIT_FAILURE;
 	}
 
-	wgpu::VertexState vertexState{};
+	wgpu::VertexState vertexState {};
 	vertexState.bufferCount = vertexBufferLayouts.size();
 	vertexState.buffers = vertexBufferLayouts.data();
 	vertexState.constantCount = vertexConstantEntries.size();
@@ -1200,7 +1185,7 @@ static int InitRenderPipeline() {
 	vertexState.entryPoint = "vert_main";
 	vertexState.module = vertexShaderModule;
 
-	wgpu::RenderPipelineDescriptor renderPipelineDescriptor{};
+	wgpu::RenderPipelineDescriptor renderPipelineDescriptor {};
 	renderPipelineDescriptor.depthStencil = &depthStencilState;
 	renderPipelineDescriptor.fragment = &fragmentState;
 	renderPipelineDescriptor.label = "render_pipeline";
@@ -1220,21 +1205,156 @@ static int InitRenderPipeline() {
 	return EXIT_SUCCESS;
 }
 
-static int InitializeApp() {
-	if (InitInstance() == EXIT_FAILURE)          return EXIT_FAILURE;
-	if (InitWindow() == EXIT_FAILURE)            return EXIT_FAILURE;
-	if (InitCompatibleSurface() == EXIT_FAILURE) return EXIT_FAILURE;
-	if (InitAdapter() == EXIT_FAILURE)           return EXIT_FAILURE;
-	if (InitDevice() == EXIT_FAILURE)            return EXIT_FAILURE;
-	ConfigureSurface();
-	if (InitQueue() == EXIT_FAILURE)             return EXIT_FAILURE;
-	if (InitRenderPipeline() == EXIT_FAILURE)    return EXIT_FAILURE;
-
-	return EXIT_SUCCESS;
-}
-
 int main() {
-	if (InitializeApp() == EXIT_FAILURE) return CleanOnExit(EXIT_FAILURE, "Failed to initialize application.", true);
+	// initialiazion of the application and assets
+	{
+		if (InitInstance() == EXIT_FAILURE)          return CleanOnExit(EXIT_FAILURE, "Failed to create instance.", true);
+		if (InitWindow() == EXIT_FAILURE)            return CleanOnExit(EXIT_FAILURE, "Failed to create window.", true);
+		if (InitCompatibleSurface() == EXIT_FAILURE) return CleanOnExit(EXIT_FAILURE, "Failed to create compatible surface.", true);
+		if (InitAdapter() == EXIT_FAILURE)           return CleanOnExit(EXIT_FAILURE, "Failed to create adapter.", true);
+		if (InitDevice() == EXIT_FAILURE)            return CleanOnExit(EXIT_FAILURE, "Failed to create device.", true);
+		ConfigureSurface();
+		if (InitQueue() == EXIT_FAILURE)             return CleanOnExit(EXIT_FAILURE, "Failed to create queue.", true);
+
+		std::vector<wgpu::VertexBufferLayout> vertexBufferLayouts{};
+
+		std::vector<wgpu::VertexAttribute> vertexAttributes(4);
+		EditVertexAttribute(vertexAttributes[0], 0, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, position));
+		EditVertexAttribute(vertexAttributes[1], 1, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, normal));
+		EditVertexAttribute(vertexAttributes[2], 2, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, color));
+		EditVertexAttribute(vertexAttributes[3], 3, wgpu::VertexFormat::Float32x2, offsetof(VertexAttributes, uv));
+
+		wgpu::VertexBufferLayout vertexBufferLayout{};
+		vertexBufferLayout.attributeCount = static_cast<uint32_t>(vertexAttributes.size());
+		vertexBufferLayout.attributes = vertexAttributes.data();
+		vertexBufferLayout.arrayStride = sizeof(VertexAttributes);
+		vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
+		vertexBufferLayouts.push_back(vertexBufferLayout);
+
+		std::vector<wgpu::BindGroupLayoutEntry> bindGroupLayoutEntries(3, wgpu::Default);
+		EditBufferBindingLayout(bindGroupLayoutEntries[0], 0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, wgpu::BufferBindingType::Uniform, sizeof(MyUniforms), false);
+		EditTextureBindingLayout(bindGroupLayoutEntries[1], 1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float, wgpu::TextureViewDimension::_2D);
+		EditSamplerBindingLayout(bindGroupLayoutEntries[2], 2, wgpu::ShaderStage::Fragment, wgpu::SamplerBindingType::Filtering);
+
+		wgpu::BufferDescriptor bufferDescriptor{};
+		bufferDescriptor.label = "uniform_buffer";
+		bufferDescriptor.size = sizeof(MyUniforms);
+		bufferDescriptor.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
+		bufferDescriptor.mappedAtCreation = false;
+		uniformBuffer = device.createBuffer(bufferDescriptor);
+		if (uniformBuffer == nullptr) {
+			return CleanOnExit(EXIT_FAILURE, "Failed to create uniform buffer.", true);
+		}
+
+		wgpu::TextureDescriptor textureDescriptor{};
+		textureDescriptor.dimension = wgpu::TextureDimension::_2D;
+		textureDescriptor.size = { 256, 256, 1 };
+		textureDescriptor.mipLevelCount = 8;
+		textureDescriptor.sampleCount = 1;
+		textureDescriptor.format = wgpu::TextureFormat::RGBA8Unorm;
+		textureDescriptor.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
+		textureDescriptor.viewFormatCount = 0;
+		textureDescriptor.viewFormats = nullptr;
+		texture = device.createTexture(textureDescriptor);
+		if (texture == nullptr) {
+			return CleanOnExit(EXIT_FAILURE, "Failed to create texture.", true);
+		}
+
+		wgpu::ImageCopyTexture destination{};
+		destination.texture = texture;
+		destination.origin = { 0, 0, 0 };
+		destination.aspect = wgpu::TextureAspect::All;
+
+		wgpu::TextureDataLayout source{};
+		source.offset = 0;
+
+		wgpu::Extent3D mipLevelSize = textureDescriptor.size;
+		std::vector<uint8_t> previousLevelPixels;
+		for (uint32_t level = 0; level < textureDescriptor.mipLevelCount; ++level) {
+			std::vector<uint8_t> pixels(4 * mipLevelSize.width * mipLevelSize.height);
+			for (uint32_t i = 0; i < mipLevelSize.width; ++i) {
+				for (uint32_t j = 0; j < mipLevelSize.height; ++j) {
+					uint8_t* p = &pixels[4 * (j * mipLevelSize.width + i)];
+					if (level == 0) {
+						// Our initial texture formula
+						p[0] = (i / 16) % 2 == (j / 16) % 2 ? 255 : 0; // r
+						p[1] = ((i - j) / 16) % 2 == 0 ? 255 : 0; // g
+						p[2] = ((i + j) / 16) % 2 == 0 ? 255 : 0; // b
+					}
+
+					else {
+						// Get the corresponding 4 pixels from the previous level
+						uint8_t* p00 = &previousLevelPixels[4 * ((2 * j + 0) * (2 * mipLevelSize.width) + (2 * i + 0))];
+						uint8_t* p01 = &previousLevelPixels[4 * ((2 * j + 0) * (2 * mipLevelSize.width) + (2 * i + 1))];
+						uint8_t* p10 = &previousLevelPixels[4 * ((2 * j + 1) * (2 * mipLevelSize.width) + (2 * i + 0))];
+						uint8_t* p11 = &previousLevelPixels[4 * ((2 * j + 1) * (2 * mipLevelSize.width) + (2 * i + 1))];
+
+						// Average
+						p[0] = (p00[0] + p01[0] + p10[0] + p11[0]) / 4;
+						p[1] = (p00[1] + p01[1] + p10[1] + p11[1]) / 4;
+						p[2] = (p00[2] + p01[2] + p10[2] + p11[2]) / 4;
+					}
+
+					/*
+					else {
+						// Some debug value for visualizing mip levels
+						p[0] = level % 2 == 0 ? 255 : 0;
+						p[1] = (level / 2) % 2 == 0 ? 255 : 0;
+						p[2] = (level / 4) % 2 == 0 ? 255 : 0;
+					}
+					*/
+
+					p[3] = 255; // a
+				}
+			}
+
+			destination.mipLevel = level;
+
+			source.bytesPerRow = 4 * mipLevelSize.width;
+			source.rowsPerImage = mipLevelSize.height;
+
+			queue.writeTexture(destination, pixels.data(), pixels.size(), source, mipLevelSize);
+
+			mipLevelSize.width /= 2;
+			mipLevelSize.height /= 2;
+
+			previousLevelPixels = std::move(pixels);
+		}
+
+		wgpu::TextureViewDescriptor textureViewDescriptor{};
+		textureViewDescriptor.aspect = wgpu::TextureAspect::All;
+		textureViewDescriptor.baseArrayLayer = 0;
+		textureViewDescriptor.arrayLayerCount = 1;
+		textureViewDescriptor.baseMipLevel = 0;
+		textureViewDescriptor.mipLevelCount = textureDescriptor.mipLevelCount;
+		textureViewDescriptor.dimension = wgpu::TextureViewDimension::_2D;
+		textureViewDescriptor.format = textureDescriptor.format;
+		wgpu::TextureView textureView = texture.createView(textureViewDescriptor);
+		if (textureView == nullptr) {
+			logger.Error("Failed to create texture view.");
+			return EXIT_FAILURE;
+		}
+
+		wgpu::SamplerDescriptor samplerDescriptor{};
+		samplerDescriptor.addressModeU = wgpu::AddressMode::Repeat;
+		samplerDescriptor.addressModeV = wgpu::AddressMode::Repeat;
+		samplerDescriptor.addressModeW = wgpu::AddressMode::ClampToEdge;
+		samplerDescriptor.magFilter = wgpu::FilterMode::Linear;
+		samplerDescriptor.minFilter = wgpu::FilterMode::Linear;
+		samplerDescriptor.mipmapFilter = wgpu::MipmapFilterMode::Linear;
+		samplerDescriptor.lodMinClamp = 0.0f;
+		samplerDescriptor.lodMaxClamp = 8.0f;
+		samplerDescriptor.compare = wgpu::CompareFunction::Undefined;
+		samplerDescriptor.maxAnisotropy = 1;
+		sampler = device.createSampler(samplerDescriptor);
+
+		std::vector<wgpu::BindGroupEntry> bindGroupEntries(3, wgpu::Default);
+		EditBufferBinding(bindGroupEntries[0], 0, uniformBuffer, sizeof(MyUniforms));
+		EditTextureBinding(bindGroupEntries[1], 1, textureView);
+		EditSamplerBinding(bindGroupEntries[2], 2, sampler);
+
+		if (InitRenderPipeline(vertexBufferLayouts, bindGroupLayoutEntries, bindGroupEntries) == EXIT_FAILURE)    return CleanOnExit(EXIT_FAILURE, "Failed to create render pipeline.", true);
+	}
 
 	std::vector<VertexAttributes> vertexData; /* = {
 		-0.5, -0.5, 1.0, 0.0, 0.0,
@@ -1249,51 +1369,45 @@ int main() {
 		return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
 	}
 
-	wgpu::BufferDescriptor bufferDesc{};
-	bufferDesc.label = "vertex_buffer";
-	bufferDesc.size = vertexData.size() * sizeof(VertexAttributes);
-	bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex;
-	bufferDesc.mappedAtCreation = false;
-	vertexBuffer = device.createBuffer(bufferDesc);
+	wgpu::BufferDescriptor vertexBufferDescriptor {};
+	vertexBufferDescriptor.label = "vertex_buffer";
+	vertexBufferDescriptor.size = vertexData.size() * sizeof(VertexAttributes);
+	vertexBufferDescriptor.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex;
+	vertexBufferDescriptor.mappedAtCreation = false;
+	vertexBuffer = device.createBuffer(vertexBufferDescriptor);
 	if (vertexBuffer == nullptr) {
 		return CleanOnExit(EXIT_FAILURE, "Failed to create vertex buffer.", true);
 	}
 
-	queue.writeBuffer(vertexBuffer, 0, vertexData.data(), bufferDesc.size);
+	queue.writeBuffer(vertexBuffer, 0, vertexData.data(), vertexBufferDescriptor.size);
 
 	int indexCount = static_cast<int>(vertexData.size());
 
-	MyUniforms uniforms{};
+	MyUniforms uniforms {};
 	
-	//Matrix4x4 S = Matrix4x4::Scale(0.3f);
-	//Matrix4x4 T1 = Matrix4x4::Translate(0.5f, 0.0f, 0.0f);
-	//Matrix4x4 R1 = Matrix4x4::RotateZ(-(float)(SDL_GetTicks64()) / 1000.0f);
-	 
-	uniforms.modelMatrix = Matrix4x4::Identity();
-	//uniforms.modelMatrix = Matrix4x4::Transpose(R1 * T1 * S);
+	Math::Vector3 cameraPosition(0.0);
+	uniforms.cameraPosition = cameraPosition;
 
-	//Matrix4x4 T2 = Matrix4x4::Translate(0.0f, 0.0f, 2.0f);
-	//Matrix4x4 R2 = Matrix4x4::RotateX(-2.0f * PI / 3.0f);
+	Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);
 
-	//uniforms.viewMatrix = Matrix4x4::Identity();
-	//uniforms.viewMatrix = Matrix4x4::Transpose(T2 * R2);
-	Matrix4x4 L = Matrix4x4::Transpose(Matrix4x4::LookAt(
-		Vector3(-2.0f, -3.0f, 2.0f), // eye
-		Vector3( 0.0f,  0.0f, 0.0f), // target
-		Vector3( 0.0f,  0.0f, 1.0f)  // up
-	));
+	uniforms.modelMatrix = Math::Matrix4x4::Transpose(S);
 	
-	uniforms.viewMatrix = L; 
+	Math::Matrix4x4 L = Math::Matrix4x4::LookAt(
+		Math::Vector3(-2.0f, -3.0f, 2.0f), // eye
+		Math::Vector3( 0.0f,  0.0f, 0.0f), // target
+		Math::Vector3( 0.0f,  0.0f, 1.0f)  // up
+	);
+	
+	uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
 
 	float ratio = windowWidth / windowHeight;
 	float vfov = 45.0f * PI / 180.0f;
 	float near = 0.01f;
-	float far = 100.0f;
+	float far = 1000.0f;
 	
-	//Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4::Orthographic(ratio, near, far));
-	Matrix4x4 P = Matrix4x4::Transpose(Matrix4x4::Perspective(vfov, ratio, near, far));
+	Math::Matrix4x4 P = Math::Matrix4x4::Perspective(vfov, ratio, near, far);
 
-	uniforms.projectionMatrix = P;
+	uniforms.projectionMatrix = Math::Matrix4x4::Transpose(P);
 
 	uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 	uniforms.time = 1.0f;
@@ -1320,7 +1434,33 @@ int main() {
 		//R1 = Matrix4x4::RotateZ(uniforms.time);
 		//uniforms.modelMatrix = Matrix4x4::Transpose(S);
 
-		//queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
+		/*
+		uniforms.modelMatrix = Matrix4x4::Transpose(S);
+		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, modelMatrix), &uniforms.modelMatrix, sizeof(MyUniforms::modelMatrix));
+		*/
+
+		cameraPosition = Math::Vector3(-300.0f * std::cosf(uniforms.time), -400.0f, -300.0f * std::sinf(uniforms.time));
+		uniforms.cameraPosition = cameraPosition;
+
+		std::cout << "cameraPosition: " << cameraPosition << std::endl;
+
+		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, cameraPosition), &uniforms.cameraPosition, sizeof(MyUniforms::cameraPosition));
+
+		L = Math::Matrix4x4::LookAt(
+			cameraPosition, // eye
+			Math::Vector3(0.0f, 0.0f, 0.0f), // target
+			Math::Vector3(0.0f, 0.0f, 1.0f)  // up
+		);
+
+		uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
+		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
+
+		/*
+		float viewZ = Mix(0.0f, 0.25f, std::cos(2 * PI * uniforms.time / 4) * 0.5 + 0.5);
+		Matrix4x4 L2 = Matrix4x4::LookAt(Vector3(-0.5f, -1.5f, viewZ + 0.25f), Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 1.0f));
+		uniforms.viewMatrix = Matrix4x4::Transpose(L2);
+		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
+		*/
 
 		wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
 		commandEncoderDescriptor.label = "command_encoder";
