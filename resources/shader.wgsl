@@ -31,7 +31,7 @@ struct VertexOutput {
 	out.position = myUniforms.projectionMatrix * myUniforms.viewMatrix * myUniforms.modelMatrix * vec4f(in.position, 1.0);
 	out.normal = (myUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
 	out.color = in.color;
-	out.uv = in.uv * 6.0;
+	out.uv = in.uv;
 
 	return out;
 }
@@ -43,7 +43,7 @@ struct VertexOutput {
 	let lightColor1 = vec3f(1.0f, 1.0, 1.0);
 	//let lightDirection1 = vec3f(0.5, -0.9, 0.1);
 	//let lightDirection1 = vec3f(0.7, -0.8, 0.4);
-	let lightDirection1 = normalize(myUniforms.cameraPosition);
+	let lightDirection1 = 1.5 * normalize(myUniforms.cameraPosition);
 	let shading1 = max(0.0, dot(lightDirection1, normal));
 	
 	//let lightColor2 = vec3f(0.6f, 0.9, 1.0);
