@@ -78,6 +78,7 @@ wgpu::Texture depthTexture = nullptr;
 wgpu::TextureView depthTextureView = nullptr;
 wgpu::Texture texture = nullptr;
 wgpu::Sampler sampler = nullptr;
+std::vector<VertexAttributes> vertexData;
 
 auto CleanOnExit = [&](int code, std::string message = "", bool error = false) -> int {
 	if (error) {
@@ -1340,8 +1341,13 @@ int main() {
 			return CleanOnExit(EXIT_FAILURE, "Failed to create uniform buffer.", true);
 		}
 
+		bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
+		if (!success) {
+			return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
+		}
+
 		wgpu::TextureView textureView = nullptr;
-		wgpu::Texture texture = LoadTexture("resources/fourareen2K_albedo.jpg", device, &textureView);
+		wgpu::Texture texture = LoadTexture("resources/de-geulasse.png", device, &textureView);
 		if (texture == nullptr) {
 			return CleanOnExit(EXIT_FAILURE, "Failed to create texture.", true);
 		}
@@ -1367,12 +1373,6 @@ int main() {
 		if (InitRenderPipeline(vertexBufferLayouts, bindGroupLayoutEntries, bindGroupEntries) == EXIT_FAILURE)    return CleanOnExit(EXIT_FAILURE, "Failed to create render pipeline.", true);
 	}
 
-	std::vector<VertexAttributes> vertexData;
-	bool success = LoadGeometryFromOBJ("resources/fourareen.obj", vertexData);
-	if (!success) {
-		return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
-	}
-
 	wgpu::BufferDescriptor vertexBufferDescriptor {};
 	vertexBufferDescriptor.label = "vertex_buffer";
 	vertexBufferDescriptor.size = vertexData.size() * sizeof(VertexAttributes);
@@ -1389,14 +1389,11 @@ int main() {
 
 	MyUniforms uniforms {};
 	
-	Math::Vector3 cameraPosition(-2.0, -3.0, 2.0);
+	Math::Vector3 cameraPosition(-300.0, -400.0, -300.0);
 	uniforms.cameraPosition = cameraPosition;
 
-	std::cout << "cameraPosition: " << cameraPosition << std::endl;
-
-	//Math::Matrix4x4 S = Math::Matrix4x4::Scale(2.0f);
-	//uniforms.modelMatrix = Math::Matrix4x4::Transpose(S);
-	uniforms.modelMatrix = Math::Matrix4x4::Identity();
+	Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);
+	uniforms.modelMatrix = Math::Matrix4x4::Transpose(S);
 	
 	Math::Matrix4x4 L = Math::Matrix4x4::LookAt(
 		cameraPosition, // eye
@@ -1408,7 +1405,7 @@ int main() {
 	float ratio = windowWidth / windowHeight;
 	float vfov = 45.0f * PI / 180.0f;
 	float near = 0.01f;
-	float far = 100.0f;
+	float far = 1000.0f;
 	Math::Matrix4x4 P = Math::Matrix4x4::Perspective(vfov, ratio, near, far);
 	uniforms.projectionMatrix = Math::Matrix4x4::Transpose(P);
 
@@ -1417,12 +1414,22 @@ int main() {
 
 	queue.writeBuffer(uniformBuffer, 0, &uniforms, sizeof(MyUniforms));
 
+	Uint8 const* keyboard = SDL_GetKeyboardState(nullptr);
+
 	running = true;
 	SDL_Event event {};
 	while (running) {
 		if (SDL_PollEvent(&event) > 0) {
 			if (event.type == SDL_QUIT) {
 				running = false;
+			}
+
+			if (keyboard[SDL_SCANCODE_Z]) {
+				cameraPosition = Math::Vector3(cameraPosition.X(), cameraPosition.Y() + 0.01f, cameraPosition.Z());
+			}
+
+			if (keyboard[SDL_SCANCODE_S]) {
+				cameraPosition = Math::Vector3(cameraPosition.X(), cameraPosition.Y() - 0.01f, cameraPosition.Z());
 			}
 		}
 
@@ -1434,15 +1441,17 @@ int main() {
 		uniforms.time = -static_cast<float>(SDL_GetTicks()) / 1000;
 		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
-		//cameraPosition = Math::Vector3(-300.0f * std::cosf(uniforms.time), -400.0f, -300.0f * std::sinf(uniforms.time));
-		//uniforms.cameraPosition = cameraPosition;
+		cameraPosition = Math::Vector3(-300.0f * std::cosf(uniforms.time), -400.0f, -300.0f * std::sinf(uniforms.time));
+		uniforms.cameraPosition = cameraPosition;
 
-		//queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, cameraPosition), &uniforms.cameraPosition, sizeof(MyUniforms::cameraPosition));
+		std::cout << "cameraPosition: " << cameraPosition << std::endl;
 
-		//L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 0.0f, 1.0f));
+		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, cameraPosition), &uniforms.cameraPosition, sizeof(MyUniforms::cameraPosition));
 
-		//uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
-		//queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
+		L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 0.0f, 1.0f));
+
+		uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
+		queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
 
 		wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
 		commandEncoderDescriptor.label = "command_encoder";
@@ -1453,40 +1462,43 @@ int main() {
 			return CleanOnExit(EXIT_FAILURE, "Failed to create command encoder.", true);
 		}
 
-		std::vector<wgpu::RenderPassColorAttachment> renderPassColorAttachments {};
-		renderPassColorAttachments.resize(1, wgpu::RenderPassColorAttachment {});
-		renderPassColorAttachments[0].loadOp = wgpu::LoadOp::Clear;
-		renderPassColorAttachments[0].resolveTarget = nullptr;
-		renderPassColorAttachments[0].storeOp = wgpu::StoreOp::Store;
-		renderPassColorAttachments[0].view = textureView;
-		renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.05f, 0.05f, 0.05f, 1.0f };
+		wgpu::RenderPassEncoder renderPassEncoder = nullptr;
+		{
+			std::vector<wgpu::RenderPassColorAttachment> renderPassColorAttachments{};
+			renderPassColorAttachments.resize(1, wgpu::RenderPassColorAttachment{});
+			renderPassColorAttachments[0].loadOp = wgpu::LoadOp::Clear;
+			renderPassColorAttachments[0].resolveTarget = nullptr;
+			renderPassColorAttachments[0].storeOp = wgpu::StoreOp::Store;
+			renderPassColorAttachments[0].view = textureView;
+			renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.05f, 0.05f, 0.05f, 1.0f };
 
-		std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments {};
-		renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment {});
-		renderPassDepthStencilAttachments[0].view = depthTextureView;
-		renderPassDepthStencilAttachments[0].depthClearValue = 1.0f;
-		renderPassDepthStencilAttachments[0].depthLoadOp = wgpu::LoadOp::Clear;
-		renderPassDepthStencilAttachments[0].depthStoreOp = wgpu::StoreOp::Store;
-		renderPassDepthStencilAttachments[0].depthReadOnly = false;
-		renderPassDepthStencilAttachments[0].stencilClearValue = 0;
-		renderPassDepthStencilAttachments[0].stencilLoadOp = wgpu::LoadOp::Clear;
-		renderPassDepthStencilAttachments[0].stencilStoreOp = wgpu::StoreOp::Store;
-		renderPassDepthStencilAttachments[0].stencilReadOnly = true;
+			std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments{};
+			renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment{});
+			renderPassDepthStencilAttachments[0].view = depthTextureView;
+			renderPassDepthStencilAttachments[0].depthClearValue = 1.0f;
+			renderPassDepthStencilAttachments[0].depthLoadOp = wgpu::LoadOp::Clear;
+			renderPassDepthStencilAttachments[0].depthStoreOp = wgpu::StoreOp::Store;
+			renderPassDepthStencilAttachments[0].depthReadOnly = false;
+			renderPassDepthStencilAttachments[0].stencilClearValue = 0;
+			renderPassDepthStencilAttachments[0].stencilLoadOp = wgpu::LoadOp::Clear;
+			renderPassDepthStencilAttachments[0].stencilStoreOp = wgpu::StoreOp::Store;
+			renderPassDepthStencilAttachments[0].stencilReadOnly = true;
 
-		wgpu::QuerySet occlusionQuerySet {};
+			wgpu::QuerySet occlusionQuerySet{};
 
-		wgpu::RenderPassDescriptor renderPassDescriptor {};
-		renderPassDescriptor.colorAttachmentCount = renderPassColorAttachments.size();
-		renderPassDescriptor.colorAttachments = renderPassColorAttachments.data();
-		renderPassDescriptor.depthStencilAttachment = &renderPassDepthStencilAttachments[0];
-		renderPassDescriptor.label = "render_pass";
-		renderPassDescriptor.nextInChain = nullptr;
-		renderPassDescriptor.occlusionQuerySet = occlusionQuerySet;
-		renderPassDescriptor.timestampWrites = nullptr;
+			wgpu::RenderPassDescriptor renderPassDescriptor{};
+			renderPassDescriptor.colorAttachmentCount = renderPassColorAttachments.size();
+			renderPassDescriptor.colorAttachments = renderPassColorAttachments.data();
+			renderPassDescriptor.depthStencilAttachment = &renderPassDepthStencilAttachments[0];
+			renderPassDescriptor.label = "render_pass";
+			renderPassDescriptor.nextInChain = nullptr;
+			renderPassDescriptor.occlusionQuerySet = occlusionQuerySet;
+			renderPassDescriptor.timestampWrites = nullptr;
 
-		wgpu::RenderPassEncoder renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-		if (renderPassEncoder == nullptr) {
-			return CleanOnExit(EXIT_FAILURE, "Failed to create render pass encoder.", true);
+			renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+			if (renderPassEncoder == nullptr) {
+				return CleanOnExit(EXIT_FAILURE, "Failed to create render pass encoder.", true);
+			}
 		}
 
 		renderPassEncoder.setPipeline(renderPipeline);
