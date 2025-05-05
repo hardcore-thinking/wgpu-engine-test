@@ -1,64 +1,116 @@
 #include <Vector2.hpp>
 
-namespace Math {
-	Vector2::Vector2() {
-		_x = 0.0f;
-		_y = 0.0f;
-	}
+Vector2::Vector2() {
+    this->x = 0.0f;
+    this->y = 0.0f;
+}
 
-	Vector2::Vector2(float c) {
-		_x = c;
-		_y = c;
-	}
+Vector2::Vector2(float c) {
+    this->x = c;
+    this->y = c;
+}
 
-	Vector2::Vector2(float x, float y) {
-		_x = x;
-		_y = y;
-	}
+Vector2::Vector2(float x, float y) {
+    this->x = x;
+    this->y = y;
+}
 
-	Vector2 Vector2::operator+(Vector2 const& other) const {
-		return Vector2(_x + other._x, _y + other._y);
-	}
+Vector2& Vector2::operator = (Vector2 const& m) {
+    this->x = m.x;
+    this->y = m.y;
 
-	Vector2 Vector2::operator-() const {
-		return Vector2(-_x, -_y);
-	}
+    return *this;
+}
 
-	Vector2 Vector2::operator-(Vector2 const& other) const {
-		return Vector2(_x - other._x, _y - other._y);
-	}
+bool operator == (Vector2 const& lhs, Vector2 const& rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
 
-	Vector2 Vector2::operator*(float scalar) const {
-		return Vector2(_x * scalar, _y * scalar);
-	}
+bool operator != (Vector2 const& lhs, Vector2 const& rhs) {
+    return !(lhs == rhs);
+}
 
-	Vector2 Vector2::operator/(float scalar) const {
-		return Vector2(_x / scalar, _y / scalar);
-	}
+std::ostream& operator << (std::ostream& out, Vector2 const& m) {
+    out << std::setprecision(3) << "[" << std::fixed << m.x << ", " << m.y << "]";
 
-	std::ostream& operator<<(std::ostream& os, Vector2 const& vec) {
-		std::ios::fmtflags f(os.flags());
-		os << std::showpos << std::setprecision(3) << std::fixed;
-		os << "|" << vec.X() << ", " << vec.Y() << "|";
-		os.flags(f);
-		return os;
-	}
+    return out;
+}
 
-	float Vector2::Magnitude() const {
-		return std::sqrtf((_x * _x) + (_y * _y));
-	}
+Vector2 operator + (Vector2 const& lhs, Vector2 const& rhs) {
+    return Vector2(
+        lhs.x + rhs.x,
+        lhs.y + rhs.y
+    );
+}
 
-	Vector2 Vector2::Normalize(Vector2 const& vec) {
-		float magnitude = vec.Magnitude();
-		if (magnitude == 0.0f) {
-			return Vector2(0.0f, 0.0f);
-		}
+Vector2& operator += (Vector2& lhs, Vector2 const& rhs) {
+    lhs = lhs + rhs;
 
-		float magnitudeInverse = 1 / magnitude;
-		return Vector2(vec.X() * magnitudeInverse, vec.Y() * magnitudeInverse);
-	}
+    return lhs;
+}
 
-	float Vector2::Dot(Vector2 const& a, Vector2 const& b) {
-		return a._x * b._x + a._y * b._y;
-	}
+Vector2 operator - (Vector2 const& m) {
+    return Vector2(
+        -m.x,
+        -m.y
+    );
+}
+
+Vector2 operator - (Vector2 const& lhs, Vector2 const& rhs) {
+    return lhs + (-rhs);
+}
+
+Vector2& operator -= (Vector2& lhs, Vector2 const& rhs) {
+    lhs = lhs - rhs;
+
+    return lhs;
+}
+
+Vector2 operator * (Vector2 const& lhs, float const& rhs) {
+    return Vector2(
+        lhs.x * rhs,
+        lhs.y * rhs
+    );
+}
+
+Vector2 operator * (float const& lhs, Vector2 const& rhs) {
+    return rhs * lhs;
+}
+
+Vector2& operator *= (Vector2& lhs, float const& rhs) {
+    lhs = lhs * rhs;
+
+    return lhs;
+}
+
+Vector2 operator / (Vector2 const& lhs, float const& rhs) {
+    float inversedRhs = 1 / rhs;
+    return lhs * inversedRhs;
+}
+
+Vector2& operator /= (Vector2& lhs, float const& rhs) {
+    lhs = lhs / rhs;
+
+    return lhs;
+}
+
+float Vector2::Dot(Vector2 const& lhs, Vector2 const& rhs) {
+    return lhs.x * rhs.x + lhs.y * rhs.y;
+}
+
+float Vector2::Magnitude(Vector2 const& m) {
+    return std::sqrt(Dot(m, m));
+}
+
+Vector2 Vector2::Normalize(Vector2 const& m) {
+    float inversedMagnitude = 1 / Magnitude(m);
+
+    return m * inversedMagnitude;
+}
+
+Vector2& Vector2::Normalized() {
+    float inversedMagnitude = 1 / Magnitude(*this);
+    *this *= inversedMagnitude;
+
+    return *this ;
 }

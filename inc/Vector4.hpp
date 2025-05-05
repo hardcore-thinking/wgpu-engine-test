@@ -5,43 +5,56 @@
 #include <iomanip>
 #include <cmath>
 
-namespace Math {
-	class Vector4 {
-		public:
-			Vector4();
-			Vector4(float c);
-			Vector4(float x, float y, float z, float w);
-			~Vector4() = default;
+#include <Vector2.hpp>
+#include <Vector3.hpp>
 
-		public:
-			float X() const { return _x; }
-			float Y() const { return _y; }
-			float Z() const { return _z; }
-			float W() const { return _w; }
+struct Vector4 {
+    public:
+        Vector4();
+        Vector4(float c);
+        Vector4(float x, float y, float z, float w);
+        Vector4(Vector2 const& xy, float z, float w);
+        Vector4(float x, Vector2 const& yz, float w);
+        Vector4(float x, float y, Vector2 const& zw);
+        Vector4(Vector2 const& xy, Vector2 const& zw);
+        Vector4(Vector3 const& xyz, float w);
+        Vector4(float x, Vector3 const& yzw);
 
-			float R() const { return _x; }
-			float G() const { return _y; }
-			float B() const { return _z; }
-			float A() const { return _w; }
+        Vector4(Vector4 const& m) = default;
+        Vector4(Vector4&& m) = default;
 
-			Vector4 operator+(Vector4 const& other) const;
-			Vector4 operator-() const;
-			Vector4 operator-(Vector4 const& other) const;
-			Vector4 operator*(float scalar) const;
-			Vector4 operator/(float scalar) const;
+        Vector4& operator = (Vector4 const& m);
 
-			friend std::ostream& operator<<(std::ostream& os, Vector4 const& vec);
+        friend bool operator == (Vector4 const& lhs, Vector4 const& rhs);
+        friend bool operator != (Vector4 const& lhs, Vector4 const& rhs);
 
-			float Magnitude() const;
+        friend std::ostream& operator << (std::ostream& out, Vector4 const& m);
 
-			static float Dot(Vector4 const& a, Vector4 const& b);
+        friend Vector4 operator + (Vector4 const& lhs, Vector4 const& rhs);
+        friend Vector4& operator += (Vector4& lhs, Vector4 const& rhs);
 
-		private:
-			float _x = 0.0f;
-			float _y = 0.0f;
-			float _z = 0.0f;
-			float _w = 0.0f;
-	};
-}
+        friend Vector4 operator - (Vector4 const& m);
+        friend Vector4 operator - (Vector4 const& lhs, Vector4 const& rhs);
+        friend Vector4& operator -= (Vector4& lhs, Vector4 const& rhs);
 
-#endif // !VECTOR4_HPP
+        friend Vector4 operator * (Vector4 const& lhs, float const& rhs);
+        friend Vector4 operator * (float const& lhs, Vector4 const& rhs);
+        friend Vector4& operator *= (Vector4& lhs, float const& rhs);
+
+        friend Vector4 operator / (Vector4 const& lhs, float const& rhs);
+        friend Vector4& operator /= (Vector4& lhs, float const& rhs);
+
+        static float Dot(Vector4 const& lhs, Vector4 const& rhs);
+        static float Magnitude(Vector4 const& m);
+        static Vector4 Normalize(Vector4 const& m);
+
+        [[nodiscard]] Vector4& Normalized();
+
+    public:
+        float x = 0.0f;
+        float y = 0.0f;
+        float z = 0.0f;
+        float w = 0.0f;
+};
+
+#endif // VECTOR4_HPP

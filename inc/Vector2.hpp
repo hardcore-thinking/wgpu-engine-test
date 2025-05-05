@@ -5,38 +5,44 @@
 #include <iomanip>
 #include <cmath>
 
-namespace Math {
-	class Vector2 {
-		public:
-			Vector2();
-			Vector2(float c);
-			Vector2(float x, float y);
-			~Vector2() = default;
+struct Vector2 {
+    public:
+        Vector2();
+        Vector2(float c);
+        Vector2(float x, float y);
+        Vector2(Vector2 const& m) = default;
+        Vector2(Vector2&& m) = default;
 
-		public:
-			float X() const { return _x; }
-			float Y() const { return _y; }
+        Vector2& operator = (Vector2 const& m);
 
-			float U() const { return _x; }
-			float V() const { return _y; }
+        friend bool operator == (Vector2 const& lhs, Vector2 const& rhs);
+        friend bool operator != (Vector2 const& lhs, Vector2 const& rhs);
 
-			Vector2 operator+(Vector2 const& other) const;
-			Vector2 operator-(Vector2 const& other) const;
-			Vector2 operator-() const;
-			Vector2 operator*(float scalar) const;
-			Vector2 operator/(float scalar) const;
+        friend std::ostream& operator << (std::ostream& out, Vector2 const& m);
 
-			friend std::ostream& operator<<(std::ostream& os, Vector2 const& vec);
+        friend Vector2 operator + (Vector2 const& lhs, Vector2 const& rhs);
+        friend Vector2& operator += (Vector2& lhs, Vector2 const& rhs);
 
-			float Magnitude() const;
+        friend Vector2 operator - (Vector2 const& m);
+        friend Vector2 operator - (Vector2 const& lhs, Vector2 const& rhs);
+        friend Vector2& operator -= (Vector2& lhs, Vector2 const& rhs);
 
-			static Vector2 Normalize(Vector2 const& vec);
-			static float Dot(Vector2 const& a, Vector2 const& b);
+        friend Vector2 operator * (Vector2 const& lhs, float const& rhs);
+        friend Vector2 operator * (float const& lhs, Vector2 const& rhs);
+        friend Vector2& operator *= (Vector2& lhs, float const& rhs);
 
-		private:
-			float _x = 0.0f;
-			float _y = 0.0f;
-		};
-}
+        friend Vector2 operator / (Vector2 const& lhs, float const& rhs);
+        friend Vector2& operator /= (Vector2& lhs, float const& rhs);
 
-#endif // !VECTOR2_HPP
+        static float Dot(Vector2 const& lhs, Vector2 const& rhs);
+        static float Magnitude(Vector2 const& m);
+        static Vector2 Normalize(Vector2 const& m);
+
+        [[nodiscard]] Vector2& Normalized();
+
+    public:
+        float x = 0.0f;
+        float y = 0.0f;
+};
+
+#endif // VECTOR2_HPP

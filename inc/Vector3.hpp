@@ -5,42 +5,50 @@
 #include <iomanip>
 #include <cmath>
 
-namespace Math {
-	class Vector3 {
-		public:
-			Vector3();
-			Vector3(float c);
-			Vector3(float x, float y, float z);
-			~Vector3() = default;
+#include <Vector2.hpp>
 
-		public:
-			float X() const { return _x; }
-			float Y() const { return _y; }
-			float Z() const { return _z; }
+struct Vector3 {
+    public:
+        Vector3();
+        Vector3(float c);
+        Vector3(float x, float y, float z);
+        Vector3(Vector2 const& xy, float z);
+        Vector3(float x, Vector2 const& yz);
+        Vector3(Vector3 const& m) = default;
+        Vector3(Vector3&& m) = default;
 
-			float R() const { return _x; }
-			float G() const { return _y; }
-			float B() const { return _z; }
+        Vector3& operator = (Vector3 const& m);
 
-			Vector3 operator+(Vector3 const& other) const;
-			Vector3 operator-(Vector3 const& other) const;
-			Vector3 operator-() const;
-			Vector3 operator*(float scalar) const;
-			Vector3 operator/(float scalar) const;
+        friend bool operator == (Vector3 const& lhs, Vector3 const& rhs);
+        friend bool operator != (Vector3 const& lhs, Vector3 const& rhs);
 
-			friend std::ostream& operator<<(std::ostream& os, Vector3 const& vec);
+        friend std::ostream& operator << (std::ostream& out, Vector3 const& m);
 
-			float Magnitude() const;
+        friend Vector3 operator + (Vector3 const& lhs, Vector3 const& rhs);
+        friend Vector3& operator += (Vector3& lhs, Vector3 const& rhs);
 
-			static Vector3 Normalize(Vector3 const& vec);
-			static float Dot(Vector3 const& a, Vector3 const& b);
-			static Vector3 Cross(Vector3 const& a, Vector3 const& b);
+        friend Vector3 operator - (Vector3 const& m);
+        friend Vector3 operator - (Vector3 const& lhs, Vector3 const& rhs);
+        friend Vector3& operator -= (Vector3& lhs, Vector3 const& rhs);
 
-		private:
-			float _x = 0.0f;
-			float _y = 0.0f;
-			float _z = 0.0f;
-		};
-}
+        friend Vector3 operator * (Vector3 const& lhs, float const& rhs);
+        friend Vector3 operator * (float const& lhs, Vector3 const& rhs);
+        friend Vector3& operator *= (Vector3& lhs, float const& rhs);
 
-#endif // !VECTOR3_HPP
+        friend Vector3 operator / (Vector3 const& lhs, float const& rhs);
+        friend Vector3& operator /= (Vector3& lhs, float const& rhs);
+
+        static float Dot(Vector3 const& lhs, Vector3 const& rhs);
+        static Vector3 Cross(Vector3 const& lhs, Vector3 const& rhs);
+        static float Magnitude(Vector3 const& m);
+        static Vector3 Normalize(Vector3 const& m);
+
+        [[nodiscard]] Vector3& Normalized();
+
+    public:
+        float x = 0.0f;
+        float y = 0.0f;
+        float z = 0.0f;
+};
+
+#endif // VECTOR3_HPP

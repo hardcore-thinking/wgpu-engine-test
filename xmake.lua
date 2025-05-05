@@ -34,11 +34,14 @@ package("sdl2webgpu")
     end)
 package_end()
 
-add_rules("mode.debug", "mode.release")
-add_requires("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
+add_requires("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb", "snitch")
 
-set_languages("cxx20")
+add_rules("mode.debug", "mode.release", "mode.coverage")
+set_warnings("all", "error")
+set_languages("c++20")
+set_optimize("fastest")
 
+add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("plugin.vsxmake.autoupdate")
 target("wgpu-test")
     set_kind("binary")
@@ -56,4 +59,22 @@ target("wgpu-test")
 
     set_configdir("$(buildir)/$(plat)/$(arch)/$(mode)/resources")
     add_configfiles("resources/*")
+target_end()
+
+target("vector2-tests")
+    set_kind("binary")
+
+    set_default(false)
+    add_packages("snitch")
+
+    set_runargs("-v", "full", "*")
+
+    add_files("tests/Vector2.test.cpp")
+    add_files("src/Vector2.cpp")
+    add_headerfiles("inc/Vector2.hpp")
+    add_tests("tests-vector2")
+
+    add_includedirs("inc")
+
+    set_warnings("error")
 target_end()
