@@ -20,6 +20,8 @@ jobs:
       - run: "echo ' - Host OS: ${{ runner.os }}'"
       - run: "echo ' - Repository: ${{ github.repository }}'"
       - run: "echo ' - Branch: ${{ github.ref }}'"
+      - name: Install dependencies
+        run: "apt install curl & curl -fsSL https://xmake.io/shget.text | bash"
       - name: Clone repository
         uses: actions/checkout@v4
       - run: "echo 'Cloned ${{ github.repository }}'"
