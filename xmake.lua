@@ -19,7 +19,7 @@ package("sdl2webgpu")
     add_urls("https://github.com/eliemichel/sdl2webgpu.git")
     add_versions("2024.06.21", "ed785c8e48bd178fd6392d3c540c0ac4746f008d")
 
-    add_deps("cmake", "libsdl", "wgpu-native", "wgpu-native-cpp")
+    add_deps("cmake", "libsdl", "wgpu-native")
 
     on_install(function (package)
         local configs = {}
