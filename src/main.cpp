@@ -32,7 +32,7 @@ constexpr float windowWidth = 640.0f;
 constexpr float windowHeight = 480.0f;
 
 struct RenderPipelineDesc : public wgpu::RenderPipelineDescriptor {
-	RenderPipelineDesc(wgpu::PipelineLayout layout, wgpu::ShaderModule vertexShaderModule, wgpu::ShaderModule fragmentShaderModule) : id(comId++) {
+	RenderPipelineDesc(wgpu::PipelineLayout pipelineLayout, wgpu::ShaderModule vertexShaderModule, wgpu::ShaderModule fragmentShaderModule) : id(comId++) {
 		wgpu::DepthStencilState depthStencilState {};
 		depthStencilState.depthBias = 0;
 		depthStencilState.depthBiasClamp = 0.0f;
