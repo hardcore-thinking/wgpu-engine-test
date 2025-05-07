@@ -15,17 +15,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - run: "echo 'Build job info:'"
-      - run: "echo ' - Trigger event: ${{ github.event_name }}'"
-      - run: "echo ' - Host OS: ${{ runner.os }}'"
-      - run: "echo ' - Repository: ${{ github.repository }}'"
-      - run: "echo ' - Branch: ${{ github.ref }}'"
+      - name: Build info
+        run: |
+          echo -e Build job info:\n
+            - Trigger event: ${{ github.event_name }}\n
+            - Host OS: ${{ runner.os }}\n
+            - Repository: ${{ github.repository }}\n
+            - Branch: ${{ github.ref }}
+            
       - name: Install dependencies
         run: "apt install curl & curl -fsSL https://xmake.io/shget.text | bash"
+      
       - name: Clone repository
         uses: actions/checkout@v4
       - run: "echo 'Cloned ${{ github.repository }}'"
+      
       - name: List files
         run: "ls ${{ github.workspace }}"
+        
       - run: "echo 'Status: ${{ job.status }}'"
       
