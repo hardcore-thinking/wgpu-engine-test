@@ -31,22 +31,96 @@ constexpr float const PI = 3.1415926535897932384626433832795f;
 constexpr float windowWidth = 640.0f;
 constexpr float windowHeight = 480.0f;
 
+struct RenderPipelineDesc : public wgpu::RenderPipelineDescriptor {
+	RenderPipelineDesc(wgpu::PipelineLayout layout, wgpu::ShaderModule vertexShaderModule, wgpu::ShaderModule fragmentShaderModule) : id(comId++) {
+		wgpu::DepthStencilState depthStencilState {};
+		depthStencilState.depthBias = 0;
+		depthStencilState.depthBiasClamp = 0.0f;
+		depthStencilState.depthBiasSlopeScale = 0.0f;
+		depthStencilState.depthCompare = wgpu::CompareFunction::LessEqual;
+		depthStencilState.depthWriteEnabled = true;
+		depthStencilState.format = wgpu::TextureFormat::Depth24Plus;
+		depthStencilState.nextInChain = nullptr;
+		depthStencilState.stencilBack.failOp = wgpu::StencilOperation::Keep;
+		depthStencilState.stencilBack.depthFailOp = wgpu::StencilOperation::Keep;
+		depthStencilState.stencilBack.passOp = wgpu::StencilOperation::Keep;
+		depthStencilState.stencilBack.compare = wgpu::CompareFunction::Always;
+		depthStencilState.stencilFront.failOp = wgpu::StencilOperation::Keep;
+		depthStencilState.stencilFront.depthFailOp = wgpu::StencilOperation::Keep;
+		depthStencilState.stencilFront.passOp = wgpu::StencilOperation::Keep;
+		depthStencilState.stencilFront.compare = wgpu::CompareFunction::Always;
+		depthStencilState.stencilReadMask = 0xFF;
+		depthStencilState.stencilWriteMask = 0xFF;
+		this->depthStencil = &depthStencilState;
+
+		wgpu::FragmentState fragmentState {};
+		fragmentState.constantCount = 0;
+		fragmentState.constants = nullptr;
+		fragmentState.entryPoint = "frag_main";
+		fragmentState.module = fragmentShaderModule;
+		fragmentState.nextInChain = nullptr;
+		fragmentState.targetCount = 0;
+		fragmentState.targets = nullptr;
+		this->fragment = &fragmentState;
+
+		this->label = ("render_pipeline_" + std::to_string(id)).c_str();
+
+		this->layout = pipelineLayout;
+
+		wgpu::MultisampleState multisampleState {};
+		multisampleState.alphaToCoverageEnabled = false;
+		multisampleState.count = 1;
+		multisampleState.mask = 0xFFFFFFFF;
+		multisampleState.nextInChain = nullptr;
+		this->multisample = multisampleState;
+
+		this->nextInChain = nullptr;
+
+		wgpu::PrimitiveState primitiveState {};
+		primitiveState.cullMode = wgpu::CullMode::Back;
+		primitiveState.frontFace = wgpu::FrontFace::CCW;
+		primitiveState.nextInChain = nullptr;
+		primitiveState.stripIndexFormat = wgpu::IndexFormat::Uint16;
+		primitiveState.topology = wgpu::PrimitiveTopology::TriangleList;
+		this->primitive = primitiveState;
+
+		wgpu::VertexState vertexState {};
+		vertexState.bufferCount = 0;
+		vertexState.buffers = nullptr;
+		vertexState.constantCount = 0;
+		vertexState.constants = nullptr;
+		vertexState.entryPoint = "vert_main";
+		vertexState.module = vertexShaderModule;
+		vertexState.nextInChain = nullptr;
+		this->vertex = vertexState;
+	}
+
+	static int comId;
+	int id = 0;
+}; 
+
+int RenderPipelineDesc::comId = 0;
+
+wgpu::RenderPipeline CreateRenderPipeline(wgpu::Device& device, RenderPipelineDesc const& descriptor) {
+	return device.createRenderPipeline(descriptor);
+}
+
 struct MyUniforms {
-	Math::Matrix4x4 projectionMatrix{};
-	Math::Matrix4x4 viewMatrix{};
-	Math::Matrix4x4 modelMatrix{};
-	Math::Vector4 color{};
-	Math::Vector3 cameraPosition{};
+	Math::Matrix4x4 projectionMatrix {};
+	Math::Matrix4x4 viewMatrix {};
+	Math::Matrix4x4 modelMatrix {};
+	Math::Vector4 color {};
+	Math::Vector3 cameraPosition {};
 	float time = 0.0f;
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0, "MyUniforms must be aligned to 16 bytes.");
 
 struct VertexAttributes {
-	Math::Vector3 position{};
-	Math::Vector3 normal{};
-	Math::Vector3 color{};
-	Math::Vector2 uv{};
+	Math::Vector3 position {};
+	Math::Vector3 normal {};
+	Math::Vector3 color {};
+	Math::Vector2 uv {};
 };
 
 Logger logger{};
@@ -1425,11 +1499,11 @@ int main() {
 			}
 
 			if (keyboard[SDL_SCANCODE_Z]) {
-				cameraPosition = Math::Vector3(cameraPosition.X(), cameraPosition.Y() + 0.01f, cameraPosition.Z());
+				cameraPosition.y += 0.01f;
 			}
 
 			if (keyboard[SDL_SCANCODE_S]) {
-				cameraPosition = Math::Vector3(cameraPosition.X(), cameraPosition.Y() - 0.01f, cameraPosition.Z());
+				cameraPosition.y -= 0.01f;
 			}
 		}
 
