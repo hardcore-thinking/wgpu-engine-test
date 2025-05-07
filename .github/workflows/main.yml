@@ -17,11 +17,11 @@ jobs:
     steps:
       - name: Build info
         run: |
-          echo -e Build job info:\n
-            - Trigger event: ${{ github.event_name }}\n
-            - Host OS: ${{ runner.os }}\n
-            - Repository: ${{ github.repository }}\n
-            - Branch: ${{ github.ref }}
+          echo -e "Build job info:\n" \
+            "- Trigger event: ${{ github.event_name }}\n" \
+            "- Host OS: ${{ runner.os }}\n" \
+            "- Repository: ${{ github.repository }}\n" \
+            "- Branch: ${{ github.ref }}"
             
       - name: Install dependencies
         run: "apt install curl & curl -fsSL https://xmake.io/shget.text | bash"
