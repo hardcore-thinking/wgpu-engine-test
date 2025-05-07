@@ -1,0 +1,29 @@
+name: Application build
+run-name: ${{ github.actor }} triggered automatic build
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: "echo 'Build job info:'"
+      - run: "echo ' - Trigger event: ${{ github.event_name }}'"
+      - run: "echo ' - Host OS: ${{ runner.os }}'"
+      - run: "echo ' - Repository: ${{ github.repository }}'"
+      - run: "echo ' - Branch: ${{ github.ref }}'"
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - run: "echo 'Cloned ${{ github.repository }}'"
+      - name: List files
+        run: "ls ${{ github.workspace }}"
+      - run: "echo 'Status: ${{ job.status }}'"
+      
