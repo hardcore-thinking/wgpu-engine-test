@@ -32,6 +32,9 @@ jobs:
       
       - name: List files
         run: "ls ${{ github.workspace }}"
+
+      - name: Build phase
+        run: "xmake build -vDy"
         
       - run: "echo 'Status: ${{ job.status }}'"
       
