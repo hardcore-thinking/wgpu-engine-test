@@ -13,12 +13,13 @@
 class Device {
     public:
         Device() = default;
-        Device(Adapter& adapter, wgpu::DeviceDescriptor const& descriptor);
         Device(Adapter& adapter, DeviceDescriptor const& descriptor);
         ~Device() = default;
 
     public:
         wgpu::Device& Handle() { return _handle; }
+        wgpu::Device const& Handle() const { return _handle; }
+
         wgpu::Limits const& Limits() const { return _limits; }
         void DisplayLimits() const;
 

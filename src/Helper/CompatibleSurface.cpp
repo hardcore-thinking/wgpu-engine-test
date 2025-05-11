@@ -9,6 +9,10 @@ CompatibleSurface::CompatibleSurface(Instance const& instance, Window& window) {
     std::cout << "Surface created successfully: " << Handle() << std::endl;
 }
 
+CompatibleSurface::~CompatibleSurface() {
+    std::cout << "Compatible surface successfully set for destruction" << std::endl;
+}
+
 void CompatibleSurface::Configure(Adapter& adapter, Device& device, Window& window) {
     std::vector<wgpu::TextureFormat> textureFormats {};
 

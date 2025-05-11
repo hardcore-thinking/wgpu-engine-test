@@ -34,6 +34,18 @@
 
 #include <Helper/StencilFaceState.hpp>
 #include <Helper/DepthStencilState.hpp>
+#include <Helper/ConstantEntry.hpp>
+#include <Helper/BlendComponent.hpp>
+#include <Helper/BlendState.hpp>
+#include <Helper/ColorTargetState.hpp>
+#include <Helper/ShaderModule.hpp>
+#include <Helper/FragmentState.hpp>
+#include <Helper/VertexState.hpp>
+#include <Helper/MultisampleState.hpp>
+#include <Helper/PrimitiveState.hpp>
+#include <Helper/PipelineLayoutDescriptor.hpp>
+#include <Helper/PipelineLayout.hpp>
+#include <Helper/RenderPipelineDescriptor.hpp>
 #include <Helper/RenderPipeline.hpp>
 
 #include <Helper/TextureDescriptor.hpp>
@@ -41,12 +53,20 @@
 #include <Helper/TextureViewDescriptor.hpp>
 #include <Helper/TextureView.hpp>
 
+#include <Helper/VertexAttribute.hpp>
+#include <Helper/VertexBufferLayout.hpp>
+
 #include <Helper/BufferBindingLayout.hpp>
 #include <Helper/TextureBindingLayout.hpp>
 #include <Helper/SamplerBindingLayout.hpp>
 #include <Helper/BufferBinding.hpp>
 #include <Helper/TextureBinding.hpp>
 #include <Helper/SamplerBinding.hpp>
+
+#include <Helper/BindGroupLayoutDescriptor.hpp>
+#include <Helper/BindGroupLayout.hpp>
+#include <Helper/BindGroupDescriptor.hpp>
+#include <Helper/BindGroup.hpp>
 
 #include <Logger.hpp>
 #include <Math/Math.hpp>
@@ -93,15 +113,15 @@ auto UncapturedErrorCallback = [](WGPUErrorType errorType, wgpu::StringView mess
 //wgpu::Adapter adapter = nullptr;
 //wgpu::Device device = nullptr;
 //std::unique_ptr<wgpu::UncapturedErrorCallback> errorCallback = nullptr;
-wgpu::RenderPipeline renderPipeline = nullptr;
-wgpu::ShaderModule fragmentShaderModule = nullptr;
-wgpu::ShaderModule vertexShaderModule = nullptr;
-wgpu::PipelineLayout pipelineLayout = nullptr;
+//wgpu::RenderPipeline renderPipeline = nullptr;
+//wgpu::ShaderModule fragmentShaderModule = nullptr;
+//wgpu::ShaderModule vertexShaderModule = nullptr;
+//wgpu::PipelineLayout pipelineLayout = nullptr;
 wgpu::Buffer vertexBuffer = nullptr;
 wgpu::Buffer indexBuffer = nullptr;
 wgpu::Buffer uniformBuffer = nullptr;
-std::vector<wgpu::BindGroupLayout> bindGroupLayouts{};
-std::vector<wgpu::BindGroup> bindGroups{};
+std::vector<BindGroupLayout> bindGroupLayouts {};
+std::vector<BindGroup> bindGroups {};
 uint32_t uniformStride = 0;
 //wgpu::Texture depthTexture = nullptr;
 //wgpu::TextureView depthTextureView = nullptr;
@@ -118,26 +138,6 @@ auto CleanOnExit(int code, std::string message = "", bool error = false) -> int 
 		logger.Info(message);
 	}
 
-	if (pipelineLayout != nullptr) {
-		pipelineLayout.release();
-		pipelineLayout = nullptr;
-	}
-
-	if (fragmentShaderModule != nullptr) {
-		fragmentShaderModule.release();
-		fragmentShaderModule = nullptr;
-	}
-
-	if (vertexShaderModule != nullptr) {
-		vertexShaderModule.release();
-		vertexShaderModule = nullptr;
-	}
-
-	if (renderPipeline != nullptr) {
-		renderPipeline.release();
-		renderPipeline = nullptr;
-	}
-
 	if (vertexBuffer != nullptr) {
 		vertexBuffer.release();
 		vertexBuffer = nullptr;
@@ -151,20 +151,6 @@ auto CleanOnExit(int code, std::string message = "", bool error = false) -> int 
 	if (uniformBuffer != nullptr) {
 		uniformBuffer.release();
 		uniformBuffer = nullptr;
-	}
-
-	for (auto& bindGroupLayout : bindGroupLayouts) {
-		if (bindGroupLayout != nullptr) {
-			bindGroupLayout.release();
-			bindGroupLayout = nullptr;
-		}
-	}
-
-	for (auto& bindGroup : bindGroups) {
-		if (bindGroup != nullptr) {
-			bindGroup.release();
-			bindGroup = nullptr;
-		}
 	}
 
 	if (texture != nullptr) {
@@ -269,74 +255,6 @@ static wgpu::Texture LoadTexture(std::filesystem::path const& path, wgpu::Device
 	}
 
 	return texture;
-}
-
-static wgpu::VertexAttribute CreateVertexAttribute(uint32_t location, wgpu::VertexFormat format, uint32_t offset) {
-	wgpu::VertexAttribute vertexAttribute{};
-
-	vertexAttribute.shaderLocation = location;
-	vertexAttribute.format = format;
-	vertexAttribute.offset = offset;
-
-	return vertexAttribute;
-}
-
-static void EditVertexAttribute(wgpu::VertexAttribute& vertexAttribute, uint32_t location, wgpu::VertexFormat format, uint32_t offset) {
-	vertexAttribute.shaderLocation = location;
-	vertexAttribute.format = format;
-	vertexAttribute.offset = offset;
-}
-
-static void GetDeviceSupportedLimits(wgpu::Device& device, wgpu::Limits* limits, bool log = false, Logger* logger = nullptr) {
-	if (device == nullptr) {
-		if (logger != nullptr) {
-			logger->Warn("Device is invalid.");
-		}
-		return;
-	}
-
-	wgpu::Bool retrievedLimits = device.getLimits(limits);
-
-	if (log) {
-		if (retrievedLimits) {
-			std::cout << "\t- " << "Limits: " << std::endl;
-
-			std::cout << "\t\t- " << "Max bind groups: " << limits->maxBindGroups << std::endl;
-			std::cout << "\t\t- " << "Max bind groups plus vertex buffers: " << limits->maxBindGroupsPlusVertexBuffers << std::endl;
-			std::cout << "\t\t- " << "Max bindings per bind group: " << limits->maxBindingsPerBindGroup << std::endl;
-			std::cout << "\t\t- " << "Max buffer size: " << limits->maxBufferSize << std::endl;
-			std::cout << "\t\t- " << "Max color attachment bytes per sample: " << limits->maxColorAttachmentBytesPerSample << std::endl;
-			std::cout << "\t\t- " << "Max color attachments: " << limits->maxColorAttachments << std::endl;
-			std::cout << "\t\t- " << "Max compute invocations per workgroup: " << limits->maxComputeInvocationsPerWorkgroup << std::endl;
-			std::cout << "\t\t- " << "Max compute workgroup size x: " << limits->maxComputeWorkgroupSizeX << std::endl;
-			std::cout << "\t\t- " << "Max compute workgroup size y: " << limits->maxComputeWorkgroupSizeY << std::endl;
-			std::cout << "\t\t- " << "Max compute workgroup size z: " << limits->maxComputeWorkgroupSizeZ << std::endl;
-			std::cout << "\t\t- " << "Max compute workgroups per dimension: " << limits->maxComputeWorkgroupsPerDimension << std::endl;
-			std::cout << "\t\t- " << "Max compute workgroup storage size: " << limits->maxComputeWorkgroupStorageSize << std::endl;
-			std::cout << "\t\t- " << "Max dynamic storage buffers per pipeline layout: " << limits->maxDynamicStorageBuffersPerPipelineLayout << std::endl;
-			std::cout << "\t\t- " << "Max dynamic uniform buffers per pipeline layout: " << limits->maxDynamicUniformBuffersPerPipelineLayout << std::endl;
-			//std::cout << "\t\t- " << "Max inter stage shader components: " << limits->maxInterStageShaderComponents << std::endl;
-			std::cout << "\t\t- " << "Max inter stage shader variables: " << limits->maxInterStageShaderVariables << std::endl;
-			std::cout << "\t\t- " << "Max sampled textures per shader stage: " << limits->maxSampledTexturesPerShaderStage << std::endl;
-			std::cout << "\t\t- " << "Max samplers per shader stage: " << limits->maxSamplersPerShaderStage << std::endl;
-			std::cout << "\t\t- " << "Max storage buffer binding size: " << limits->maxStorageBufferBindingSize << std::endl;
-			std::cout << "\t\t- " << "Max storage buffers per shader stage: " << limits->maxStorageBuffersPerShaderStage << std::endl;
-			std::cout << "\t\t- " << "Max storage textures per shader stage: " << limits->maxStorageTexturesPerShaderStage << std::endl;
-			std::cout << "\t\t- " << "Max texture array layers: " << limits->maxTextureArrayLayers << std::endl;
-			std::cout << "\t\t- " << "Max texture dimension 1D: " << limits->maxTextureDimension1D << std::endl;
-			std::cout << "\t\t- " << "Max texture dimension 2D: " << limits->maxTextureDimension2D << std::endl;
-			std::cout << "\t\t- " << "Max texture dimension 3D: " << limits->maxTextureDimension3D << std::endl;
-			std::cout << "\t\t- " << "Max uniform buffer binding size: " << limits->maxUniformBufferBindingSize << std::endl;
-			std::cout << "\t\t- " << "Max uniform buffers per shader stage: " << limits->maxUniformBuffersPerShaderStage << std::endl;
-			std::cout << "\t\t- " << "Max vertex attributes: " << limits->maxVertexAttributes << std::endl;
-			std::cout << "\t\t- " << "Max vertex buffer array stride: " << limits->maxVertexBufferArrayStride << std::endl;
-			std::cout << "\t\t- " << "Max vertex buffers: " << limits->maxVertexBuffers << std::endl;
-			std::cout << "\t\t- " << "Min storage buffer offset alignment: " << limits->minStorageBufferOffsetAlignment << std::endl;
-			std::cout << "\t\t- " << "Min uniform buffer offset alignment: " << limits->minUniformBufferOffsetAlignment << std::endl;
-
-			std::cout << std::endl;
-		}
-	}
 }
 
 static bool CreateRenderPipeline(wgpu::RenderPipeline& renderPipeline, wgpu::Device& device, wgpu::RenderPipelineDescriptor const& renderPipelineDescriptor) {
@@ -455,32 +373,6 @@ static bool LoadGeometry(std::filesystem::path const& path, std::vector<float>& 
 	return true;
 }
 
-static wgpu::ShaderModule LoadShaderModule(std::filesystem::path const& path, wgpu::Device device) {
-	std::ifstream file(path);
-	if (!file.is_open()) {
-		std::cerr << "Can't open " << path << std::endl;
-		return nullptr;
-	}
-
-	file.seekg(0, std::ios::end);
-	size_t size = file.tellg();
-	std::string shaderSource(size, ' ');
-	file.seekg(0);
-	file.read(shaderSource.data(), size);
-
-	wgpu::ShaderSourceWGSL shaderCodeDesc{};
-	shaderCodeDesc.chain.next = nullptr;
-	shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
-	shaderCodeDesc.code = wgpu::StringView(shaderSource.c_str());
-
-	wgpu::ShaderModuleDescriptor shaderDesc{};
-	
-	shaderDesc.label = wgpu::StringView(path.stem().string().c_str());
-	shaderDesc.nextInChain = &shaderCodeDesc.chain;
-
-	return device.createShaderModule(shaderDesc);
-}
-
 static bool LoadGeometryFromOBJ(std::filesystem::path const& path, std::vector<VertexAttributes>& vertexData) {
 	tinyobj::attrib_t attrib {};
 	std::vector<tinyobj::shape_t> shapes{};
@@ -537,143 +429,44 @@ static bool LoadGeometryFromOBJ(std::filesystem::path const& path, std::vector<V
 	return true;
 }
 
-static int InitRenderPipeline(Device device, wgpu::Adapter adapter, wgpu::Surface surface, std::vector<wgpu::VertexBufferLayout> const& vertexBufferLayouts, std::vector<wgpu::BindGroupLayoutEntry> const& bindGroupLayoutEntries, std::vector<wgpu::BindGroupEntry> const& bindGroupEntries) {
-	StencilFaceState stencilBackFaceState {};
-	StencilFaceState stencilFrontFaceState {};
-
+static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, CompatibleSurface& surface, std::vector<VertexBufferLayout> const& vertexBufferLayouts, std::vector<BindGroupLayoutEntry> const& bindGroupLayoutEntries, std::vector<BindGroupEntry> const& bindGroupEntries) {
+	StencilFaceState stencilBackFaceState;
+	StencilFaceState stencilFrontFaceState;
 	wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
-
 	DepthStencilState depthStencilState(stencilFrontFaceState, stencilBackFaceState, depthTextureFormat);
 
-	std::vector<wgpu::ConstantEntry> fragmentConstantEntries {};
-	//std::vector<wgpu::ShaderModuleCompilationHint> fragmentShaderModuleCompilationHints {};
+	PrimitiveState primitiveState;
+	primitiveState.cullMode = wgpu::CullMode::None; // for debug purposes
 
-	wgpu::ChainedStruct fragmentShaderModuleChainedStruct {};
-	fragmentShaderModuleChainedStruct.next = nullptr;
-	fragmentShaderModuleChainedStruct.sType = wgpu::SType::ShaderSourceWGSL;
+	MultisampleState multisampleState;
 
-	fragmentShaderModule = LoadShaderModule("resources/shader.wgsl", device.Handle());
-	if (fragmentShaderModule == nullptr) {
-		logger.Error("Failed to create fragment shader module.");
-		return EXIT_FAILURE;
-	}
+	std::vector<ConstantEntry> vertexConstantEntries {};
+	ShaderModule vertexShaderModule(device, "resources/shader.wgsl");
+	VertexState vertexState(wgpu::StringView("vert_main"), vertexShaderModule, vertexBufferLayouts, vertexConstantEntries);
+	
+	BlendComponent colorComponent(wgpu::BlendFactor::SrcAlpha, wgpu::BlendFactor::OneMinusSrcAlpha, wgpu::BlendOperation::Add);
+	BlendComponent alphaComponent(wgpu::BlendFactor::Zero, wgpu::BlendFactor::One, wgpu::BlendOperation::Add);
+	BlendState blendState(colorComponent, alphaComponent);
+	std::vector<ColorTargetState> colorTargetStates {};
+	ColorTargetState colorTargetState(adapter, surface, blendState);
+	colorTargetStates.push_back(colorTargetState);
+	std::vector<ConstantEntry> fragmentConstantEntries {};
+	ShaderModule fragmentShaderModule(device, "resources/shader.wgsl");
+	FragmentState fragmentState(wgpu::StringView("frag_main"), fragmentShaderModule, colorTargetStates, fragmentConstantEntries);
+	
+	BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
+	bindGroupLayouts.emplace_back(device, bindGroupLayoutDescriptor);
 
-	wgpu::BlendComponent colorComponent {};
-	colorComponent.dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha;
-	colorComponent.operation = wgpu::BlendOperation::Add;
-	colorComponent.srcFactor = wgpu::BlendFactor::SrcAlpha;
+	BindGroupDescriptor bindGroupDescriptor(bindGroupLayouts[0], bindGroupEntries);
+	bindGroups.emplace_back(device, bindGroupDescriptor);
 
-	wgpu::BlendComponent alphaComponent {};
-	alphaComponent.dstFactor = wgpu::BlendFactor::One;
-	alphaComponent.operation = wgpu::BlendOperation::Add;
-	alphaComponent.srcFactor = wgpu::BlendFactor::Zero;
+	PipelineLayoutDescriptor pipelineLayoutDescriptor(bindGroupLayouts);
+	PipelineLayout pipelineLayout(device, pipelineLayoutDescriptor);
 
-	wgpu::BlendState blendState {};
-	blendState.alpha = alphaComponent;
-	blendState.color = colorComponent;
+	RenderPipelineDescriptor renderPipelineDescriptor(depthStencilState, primitiveState, multisampleState, vertexState, fragmentState, pipelineLayout);
+	RenderPipeline renderPipeline(device, renderPipelineDescriptor);
 
-	std::vector<wgpu::ColorTargetState> colorTargetStates {};
-	colorTargetStates.resize(1, wgpu::ColorTargetState{});
-	colorTargetStates[0].blend = &blendState;
-
-	wgpu::SurfaceCapabilities surfaceCapabilities;
-	surface.getCapabilities(adapter, &surfaceCapabilities);
-
-	colorTargetStates[0].format = surfaceCapabilities.formats[0];
-	colorTargetStates[0].nextInChain = nullptr;
-	colorTargetStates[0].writeMask = wgpu::ColorWriteMask::All;
-
-	wgpu::FragmentState fragmentState {};
-	fragmentState.constantCount = fragmentConstantEntries.size();
-	fragmentState.constants = fragmentConstantEntries.data();
-	fragmentState.entryPoint = wgpu::StringView("frag_main");
-	fragmentState.module = fragmentShaderModule;
-	fragmentState.nextInChain = nullptr;
-	fragmentState.targetCount = colorTargetStates.size();
-	fragmentState.targets = colorTargetStates.data();
-
-	wgpu::BindGroupLayoutDescriptor bindGroupLayoutDescriptor {};
-	bindGroupLayoutDescriptor.nextInChain = nullptr;
-	bindGroupLayoutDescriptor.entryCount = bindGroupLayoutEntries.size();
-	bindGroupLayoutDescriptor.entries = bindGroupLayoutEntries.data();
-	bindGroupLayouts.push_back(device.Handle().createBindGroupLayout(bindGroupLayoutDescriptor));
-	if (bindGroupLayouts[0] == nullptr) {
-		logger.Error("Failed to create bind group layout.");
-		return EXIT_FAILURE;
-	}
-
-	wgpu::BindGroupDescriptor bindGroupDescriptor {};
-	bindGroupDescriptor.nextInChain = nullptr;
-	bindGroupDescriptor.layout = bindGroupLayouts[0];
-	bindGroupDescriptor.entryCount = (uint32_t)(bindGroupEntries.size());
-	bindGroupDescriptor.entries = bindGroupEntries.data();
-	wgpu::BindGroup bindGroup = device.Handle().createBindGroup(bindGroupDescriptor);
-	if (bindGroup == nullptr) {
-		logger.Error("Failed to create bind group.");
-		return EXIT_FAILURE;
-	}
-
-	bindGroups.push_back(bindGroup);
-
-	wgpu::PipelineLayoutDescriptor pipelineLayoutDescriptor {};
-	pipelineLayoutDescriptor.bindGroupLayoutCount = bindGroupLayouts.size();
-	pipelineLayoutDescriptor.bindGroupLayouts = (WGPUBindGroupLayout*)(bindGroupLayouts.data());
-	pipelineLayoutDescriptor.label = wgpu::StringView("pipeline_layout");
-	pipelineLayoutDescriptor.nextInChain = nullptr;
-	pipelineLayout = device.Handle().createPipelineLayout(pipelineLayoutDescriptor);
-	if (pipelineLayout == nullptr) {
-		logger.Error("Failed to create pipeline layout.");
-		return EXIT_FAILURE;
-	}
-
-	wgpu::MultisampleState multisampleState {};
-	multisampleState.alphaToCoverageEnabled = false;
-	multisampleState.count = 1;
-	multisampleState.mask = 0xFFFFFFFF;
-	multisampleState.nextInChain = nullptr;
-
-	wgpu::PrimitiveState primitiveState {};
-	primitiveState.cullMode = wgpu::CullMode::None;
-	primitiveState.frontFace = wgpu::FrontFace::CCW;
-	primitiveState.nextInChain = nullptr;
-	primitiveState.stripIndexFormat = wgpu::IndexFormat::Undefined;
-	primitiveState.topology = wgpu::PrimitiveTopology::TriangleList;
-
-	std::vector<wgpu::ConstantEntry> vertexConstantEntries {};
-	//std::vector<wgpu::ShaderModuleCompilationHint> vertexShaderModuleCompilationHints {};
-
-	vertexShaderModule = LoadShaderModule("resources/shader.wgsl", device.Handle());
-	if (vertexShaderModule == nullptr) {
-		logger.Error("Failed to create vertex shader module.");
-		return EXIT_FAILURE;
-	}
-
-	wgpu::VertexState vertexState {};
-	vertexState.bufferCount = vertexBufferLayouts.size();
-	vertexState.buffers = vertexBufferLayouts.data();
-	vertexState.constantCount = vertexConstantEntries.size();
-	vertexState.constants = vertexConstantEntries.data();
-	vertexState.entryPoint = wgpu::StringView("vert_main");
-	vertexState.module = vertexShaderModule;
-
-	wgpu::RenderPipelineDescriptor renderPipelineDescriptor {};
-	renderPipelineDescriptor.depthStencil = &depthStencilState;
-	renderPipelineDescriptor.fragment = &fragmentState;
-	renderPipelineDescriptor.label = wgpu::StringView("render_pipeline");
-	renderPipelineDescriptor.layout = pipelineLayout;
-	renderPipelineDescriptor.multisample = multisampleState;
-	renderPipelineDescriptor.nextInChain = nullptr;
-	renderPipelineDescriptor.primitive = primitiveState;
-	renderPipelineDescriptor.vertex = vertexState;
-
-	if (!CreateRenderPipeline(renderPipeline, device.Handle(), renderPipelineDescriptor)) {
-		logger.Error("Failed to create render pipeline.");
-		return EXIT_FAILURE;
-	}
-
-	logger.Info("Render pipeline created.");
-
-	return EXIT_SUCCESS;
+	return renderPipeline;
 }
 
 int main() {
@@ -688,10 +481,6 @@ int main() {
 		limits.maxVertexBufferArrayStride = sizeof(VertexAttributes);
 		DeviceDescriptor deviceDescriptor(adapter, limits);
 
-		//uniformStride = Math::CeilToNextMultiple(static_cast<uint32_t>(sizeof(MyUniforms)),
-		//	static_cast<uint32_t>(deviceSupportedLimits.minUniformBufferOffsetAlignment));
-		//wgpu::DeviceLostCallback deviceLostCallback = (wgpu::DeviceLostCallback)(DeviceLostCallback);
-		
 		Device device(adapter, deviceDescriptor);
 		wgpu::Queue queue = device.Handle().getQueue();
 		surface.Configure(adapter, device, window);
@@ -705,77 +494,65 @@ int main() {
 		TextureViewDescriptor depthTextureViewDescriptor(wgpu::TextureAspect::DepthOnly, depthTextureFormat);
 		TextureView depthTextureView(depthTexture, depthTextureViewDescriptor);
 
-		// initialiazion of the assets
-		{
-			std::vector<wgpu::VertexBufferLayout> vertexBufferLayouts{};
+		std::vector<VertexAttribute> vertexAttributes;;
+		vertexAttributes.push_back(VertexAttribute(0, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, position)));
+		vertexAttributes.push_back(VertexAttribute(1, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, normal)));
+		vertexAttributes.push_back(VertexAttribute(2, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, color)));
+		vertexAttributes.push_back(VertexAttribute(3, wgpu::VertexFormat::Float32x2, offsetof(VertexAttributes, uv)));
 
-			std::vector<wgpu::VertexAttribute> vertexAttributes(4);
-			EditVertexAttribute(vertexAttributes[0], 0, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, position));
-			EditVertexAttribute(vertexAttributes[1], 1, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, normal));
-			EditVertexAttribute(vertexAttributes[2], 2, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, color));
-			EditVertexAttribute(vertexAttributes[3], 3, wgpu::VertexFormat::Float32x2, offsetof(VertexAttributes, uv));
+		std::vector<VertexBufferLayout> vertexBufferLayouts {};
+		VertexBufferLayout vertexBufferLayout(sizeof(VertexAttributes), vertexAttributes);
+		vertexBufferLayouts.push_back(vertexBufferLayout);
 
-			wgpu::VertexBufferLayout vertexBufferLayout{};
-			vertexBufferLayout.attributeCount = static_cast<uint32_t>(vertexAttributes.size());
-			vertexBufferLayout.attributes = vertexAttributes.data();
-			vertexBufferLayout.arrayStride = sizeof(VertexAttributes);
-			vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
-			vertexBufferLayouts.push_back(vertexBufferLayout);
+		std::vector<BindGroupLayoutEntry> bindGroupLayoutEntries(3, wgpu::Default);
+		EditBufferBindingLayout(bindGroupLayoutEntries[0], 0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, wgpu::BufferBindingType::Uniform, sizeof(MyUniforms), false);
+		EditTextureBindingLayout(bindGroupLayoutEntries[1], 1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float, wgpu::TextureViewDimension::_2D);
+		EditSamplerBindingLayout(bindGroupLayoutEntries[2], 2, wgpu::ShaderStage::Fragment, wgpu::SamplerBindingType::Filtering);
 
-			std::vector<wgpu::BindGroupLayoutEntry> bindGroupLayoutEntries(3, wgpu::Default);
-			EditBufferBindingLayout(bindGroupLayoutEntries[0], 0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, wgpu::BufferBindingType::Uniform, sizeof(MyUniforms), false);
-			EditTextureBindingLayout(bindGroupLayoutEntries[1], 1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float, wgpu::TextureViewDimension::_2D);
-			EditSamplerBindingLayout(bindGroupLayoutEntries[2], 2, wgpu::ShaderStage::Fragment, wgpu::SamplerBindingType::Filtering);
-
-			//DisplayBufferBindingLayout(bindGroupLayoutEntries[0]); std::cout << std::endl;
-			//DisplayTextureBindingLayout(bindGroupLayoutEntries[1]); std::cout << std::endl;
-			//DisplaySamplerBindingLayout(bindGroupLayoutEntries[2]); std::cout << std::endl;
-
-			wgpu::BufferDescriptor bufferDescriptor{};
-			bufferDescriptor.label = wgpu::StringView("uniform_buffer");
-			bufferDescriptor.size = sizeof(MyUniforms);
-			bufferDescriptor.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
-			bufferDescriptor.mappedAtCreation = false;
-			uniformBuffer = device.Handle().createBuffer(bufferDescriptor);
-			if (uniformBuffer == nullptr) {
-				return CleanOnExit(EXIT_FAILURE, "Failed to create uniform buffer.", true);
-			}
-
-			bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
-			if (!success) {
-				return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
-			}
-
-			wgpu::TextureView textureView = nullptr;
-			wgpu::Texture texture = LoadTexture("resources/de-geulasse.png", device.Handle(), &textureView);
-			if (texture == nullptr) {
-				return CleanOnExit(EXIT_FAILURE, "Failed to create texture.", true);
-			}
-
-			wgpu::SamplerDescriptor samplerDescriptor{};
-			samplerDescriptor.addressModeU = wgpu::AddressMode::Repeat;
-			samplerDescriptor.addressModeV = wgpu::AddressMode::Repeat;
-			samplerDescriptor.addressModeW = wgpu::AddressMode::ClampToEdge;
-			samplerDescriptor.magFilter = wgpu::FilterMode::Linear;
-			samplerDescriptor.minFilter = wgpu::FilterMode::Linear;
-			samplerDescriptor.mipmapFilter = wgpu::MipmapFilterMode::Linear;
-			samplerDescriptor.lodMinClamp = 0.0f;
-			samplerDescriptor.lodMaxClamp = 8.0f;
-			samplerDescriptor.compare = wgpu::CompareFunction::Undefined;
-			samplerDescriptor.maxAnisotropy = 1;
-			sampler = device.Handle().createSampler(samplerDescriptor);
-
-			std::vector<wgpu::BindGroupEntry> bindGroupEntries(3, wgpu::Default);
-			EditBufferBinding(bindGroupEntries[0], 0, uniformBuffer, sizeof(MyUniforms), false);
-			EditTextureBinding(bindGroupEntries[1], 1, textureView);
-			EditSamplerBinding(bindGroupEntries[2], 2, sampler);
-		
-			//DisplayBufferBinding(bindGroupEntries[0]); std::cout << std::endl;
-			//DisplayTextureBinding(bindGroupEntries[1]); std::cout << std::endl;
-			//DisplaySamplerBinding(bindGroupEntries[2]); std::cout << std::endl;
-
-			if (InitRenderPipeline(device, adapter.Handle(), surface.Handle(), vertexBufferLayouts, bindGroupLayoutEntries, bindGroupEntries) == EXIT_FAILURE)    return CleanOnExit(EXIT_FAILURE, "Failed to create render pipeline 2.", true);
+		wgpu::BufferDescriptor bufferDescriptor{};
+		bufferDescriptor.label = wgpu::StringView("uniform_buffer");
+		bufferDescriptor.size = sizeof(MyUniforms);
+		bufferDescriptor.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
+		bufferDescriptor.mappedAtCreation = false;
+		uniformBuffer = device.Handle().createBuffer(bufferDescriptor);
+		if (uniformBuffer == nullptr) {
+			return CleanOnExit(EXIT_FAILURE, "Failed to create uniform buffer.", true);
 		}
+
+		bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
+		if (!success) {
+			return CleanOnExit(EXIT_FAILURE, "Failed to load geometry.", true);
+		}
+
+		wgpu::TextureView textureView = nullptr;
+		wgpu::Texture texture = LoadTexture("resources/de-geulasse.png", device.Handle(), &textureView);
+		if (texture == nullptr) {
+			return CleanOnExit(EXIT_FAILURE, "Failed to create texture.", true);
+		}
+
+		wgpu::SamplerDescriptor samplerDescriptor{};
+		samplerDescriptor.addressModeU = wgpu::AddressMode::Repeat;
+		samplerDescriptor.addressModeV = wgpu::AddressMode::Repeat;
+		samplerDescriptor.addressModeW = wgpu::AddressMode::ClampToEdge;
+		samplerDescriptor.magFilter = wgpu::FilterMode::Linear;
+		samplerDescriptor.minFilter = wgpu::FilterMode::Linear;
+		samplerDescriptor.mipmapFilter = wgpu::MipmapFilterMode::Linear;
+		samplerDescriptor.lodMinClamp = 0.0f;
+		samplerDescriptor.lodMaxClamp = 8.0f;
+		samplerDescriptor.compare = wgpu::CompareFunction::Undefined;
+		samplerDescriptor.maxAnisotropy = 1;
+		sampler = device.Handle().createSampler(samplerDescriptor);
+
+		std::vector<BindGroupEntry> bindGroupEntries(3, wgpu::Default);
+		EditBufferBinding(bindGroupEntries[0], 0, uniformBuffer, sizeof(MyUniforms), false);
+		EditTextureBinding(bindGroupEntries[1], 1, textureView);
+		EditSamplerBinding(bindGroupEntries[2], 2, sampler);
+		
+		//DisplayBufferBinding(bindGroupEntries[0]); std::cout << std::endl;
+		//DisplayTextureBinding(bindGroupEntries[1]); std::cout << std::endl;
+		//DisplaySamplerBinding(bindGroupEntries[2]); std::cout << std::endl;
+
+		RenderPipeline renderPipeline = InitRenderPipeline(device, adapter, surface, vertexBufferLayouts, bindGroupLayoutEntries, bindGroupEntries);
 
 		wgpu::BufferDescriptor vertexBufferDescriptor {};
 		vertexBufferDescriptor.label = wgpu::StringView("vertex_buffer");
@@ -879,7 +656,6 @@ int main() {
 				std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments{};
 				renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment{});
 				renderPassDepthStencilAttachments[0].view = depthTextureView.Handle();
-				std::cout << "depthTextureView: " << depthTextureView << depthTextureView.Handle() << std::endl;
 				renderPassDepthStencilAttachments[0].depthClearValue = 1.0f;
 				renderPassDepthStencilAttachments[0].depthLoadOp = wgpu::LoadOp::Clear;
 				renderPassDepthStencilAttachments[0].depthStoreOp = wgpu::StoreOp::Store;
@@ -906,9 +682,9 @@ int main() {
 				}
 			}
 
-			renderPassEncoder.setPipeline(renderPipeline);
+			renderPassEncoder.setPipeline(renderPipeline.Handle());
 			renderPassEncoder.setVertexBuffer(0, vertexBuffer, 0, vertexData.size() * sizeof(VertexAttributes));
-			renderPassEncoder.setBindGroup(0, bindGroups[0], 0, nullptr);
+			renderPassEncoder.setBindGroup(0, bindGroups[0].Handle(), 0, nullptr);
 			renderPassEncoder.draw(indexCount, 1, 0, 0);
 		
 			renderPassEncoder.end();

@@ -26,4 +26,11 @@ void DisplayTextureBindingLayout(
     wgpu::BindGroupLayoutEntry const& bindGroupLayoutEntry
 );
 
+struct TextureBindingLayout : public wgpu::BindGroupLayoutEntry {
+    public:
+        TextureBindingLayout() = delete;
+        TextureBindingLayout(uint32_t binding, wgpu::ShaderStage visibility, wgpu::TextureSampleType sampleType);
+
+};
+
 #endif // TEXTUREBINDINGLAYOUT_HPP

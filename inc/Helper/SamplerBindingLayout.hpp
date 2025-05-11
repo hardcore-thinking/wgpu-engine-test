@@ -22,4 +22,11 @@ void DisplaySamplerBindingLayout(
     wgpu::BindGroupLayoutEntry const& bindGroupLayoutEntry
 );
 
+struct SamplerBindingLayout : public wgpu::BindGroupLayoutEntry {
+    public:
+        SamplerBindingLayout() = delete;
+        SamplerBindingLayout(uint32_t binding, wgpu::ShaderStage visibility, wgpu::SamplerBindingType type);
+
+};
+
 #endif // SAMPLERBINDINGLAYOUT_HPP

@@ -12,7 +12,8 @@ class Instance {
         ~Instance();
 
     public:
-        wgpu::Instance Handle() const { return _handle; }
+        wgpu::Instance& Handle() { return _handle; }
+        wgpu::Instance const& Handle() const { return _handle; }
 
     private:
         wgpu::Instance _handle = nullptr;

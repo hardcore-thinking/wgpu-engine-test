@@ -3,10 +3,25 @@
 
 #include <iostream>
 #include <string>
-#include <cassert>
+#include <stdexcept>
 
 #include <wgpu-native/webgpu.hpp>
 
-wgpu::RenderPipelineDescriptor CreateRenderPipelineDescriptor(wgpu::PipelineLayout pipelineLayout, wgpu::ShaderModule vertexShaderModule, wgpu::ShaderModule fragmentShaderModule);
+#include <Helper/Device.hpp>
+#include <Helper/RenderPipelineDescriptor.hpp>
+
+class RenderPipeline {
+public:
+    RenderPipeline() = delete;
+    RenderPipeline(Device& device, RenderPipelineDescriptor const& renderPipelineDescriptor);
+    ~RenderPipeline();
+
+    public:
+        wgpu::RenderPipeline& Handle() { return _handle; }
+        wgpu::RenderPipeline const& Handle() const { return _handle; }
+
+    private:
+        wgpu::RenderPipeline _handle = nullptr;
+};
 
 #endif // RENDERPIPELINE_HPP

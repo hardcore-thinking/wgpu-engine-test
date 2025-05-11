@@ -28,4 +28,10 @@ void DisplayBufferBindingLayout(
     wgpu::BindGroupLayoutEntry const& bindGroupLayoutEntry
 );
 
+struct BufferBindingLayout : public wgpu::BindGroupLayoutEntry {
+    public:
+        BufferBindingLayout() = delete;
+        BufferBindingLayout(uint32_t binding, wgpu::ShaderStage visibility, wgpu::BufferBindingType type, uint32_t size, uint32_t minBindingSize);
+};
+
 #endif // BUFFERBINDINGLAYOUT_HPP

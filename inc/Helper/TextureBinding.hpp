@@ -18,4 +18,11 @@ void DisplayTextureBinding(
     wgpu::BindGroupEntry const& bindGroupEntry
 );
 
+struct TextureBinding : public wgpu::BindGroupEntry {
+    public:
+        TextureBinding() = delete;
+        TextureBinding(uint32_t binding, wgpu::TextureView& textureView);
+
+};
+
 #endif // TEXTUREBINDING_HPP

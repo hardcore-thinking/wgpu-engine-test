@@ -16,12 +16,14 @@
 class Adapter {
     public:
         Adapter() = delete;
-        Adapter(Instance const& instance, Window const& window, Surface& surface);
-        Adapter(Instance const& instance, Window const& window, wgpu::RequestAdapterOptions const& options);
+        Adapter(Instance& instance, Window const& window, Surface& surface);
+        Adapter(Instance& instance, Window const& window, wgpu::RequestAdapterOptions const& options);
         ~Adapter();
 
     public:
         wgpu::Adapter& Handle() { return _handle; }
+        wgpu::Adapter const& Handle() const { return _handle; }
+
         wgpu::SupportedFeatures const& Features() const { return _features; }
         wgpu::AdapterInfo const& Infos() const { return _infos; }
         wgpu::Limits const& Limits() const { return _limits; }

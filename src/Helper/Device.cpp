@@ -1,16 +1,5 @@
 #include <Helper/Device.hpp>
 
-Device::Device(Adapter& adapter, wgpu::DeviceDescriptor const& descriptor) {
-	_handle = adapter.Handle().requestDevice(descriptor);
-    if (_handle == nullptr) {
-        throw std::runtime_error("Failed to create WGPU device");
-    }
-
-    std::cout << "Device created successfully: " << Handle() << std::endl;
-
-    _handle.getLimits(&_limits);
-}
-
 Device::Device(Adapter& adapter, DeviceDescriptor const& descriptor) {
 	std::cout << "Device descriptor: " << &descriptor << std::endl;
 

@@ -18,6 +18,7 @@ class TextureView : public wgpu::TextureView {
 
     public:
         wgpu::TextureView& Handle() { return _handle; }
+        wgpu::TextureView const& Handle() const { return _handle; }
 
     private:
         wgpu::TextureView _handle = nullptr;

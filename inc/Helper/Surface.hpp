@@ -18,6 +18,7 @@ class Surface {
 
     public:
         wgpu::Surface& Handle() { return _handle; }
+        wgpu::Surface const& Handle() const { return _handle; }
 
     protected:
         static int _id;

@@ -27,6 +27,8 @@ Surface::~Surface() {
         _handle.release();
         _handle = nullptr;
     }
+
+    std::cout << "Surface destroyed successfully" << std::endl;
 }
 
 int Surface::_id = 0;

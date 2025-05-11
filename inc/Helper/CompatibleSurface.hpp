@@ -19,7 +19,7 @@ class CompatibleSurface : public Surface {
     public:
         CompatibleSurface() = default;
         CompatibleSurface(Instance const& instance, Window& window);
-        ~CompatibleSurface() = default;
+        ~CompatibleSurface();
 
     public:
         void Configure(Adapter& adapter, Device& device, Window& window);
