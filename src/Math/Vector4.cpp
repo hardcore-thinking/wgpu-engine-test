@@ -1,4 +1,4 @@
-#include <Vector4.hpp>
+#include <Math/Vector4.hpp>
 
 namespace Math {
     Vector4::Vector4() {

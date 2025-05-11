@@ -1,4 +1,4 @@
-#include <Vector2.hpp>
+#include <Math/Vector2.hpp>
 
 namespace Math {
     Vector2::Vector2() {

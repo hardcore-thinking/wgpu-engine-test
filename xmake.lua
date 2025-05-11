@@ -1,14 +1,28 @@
-package("wgpu-native-cpp")
-    add_urls("https://github.com/eliemichel/WebGPU-Cpp.git")
-    add_versions("2024.08.31", "02403c48c8c2684ba1138355d505a2f9f3d72a93")
+add_rules("mode.debug", "mode.release", "mode.coverage")
+set_warnings("all", "error")
+set_languages("cxx17")
+set_optimize("fastest")
 
+add_requires("wgpu-native v24.0.0+1", "libsdl2")
+
+package("wgpu-native-cpp")
+    set_homepage("https://github.com/eliemichel/WebGPU-Cpp.git")
+    set_description("CMake files that provide WebGPU for native and web development, easy-to-integrate and unified across implementations.")
+    set_license("MIT")
+    
+    set_urls("https://github.com/eliemichel/WebGPU-Cpp.git")
+    add_versions("2025.05.08", "3938273103e69a5af3288196deccc48774d955f3")
+    
     add_deps("wgpu-native")
 
     on_install(function (package)
         os.vcp("wgpu-native/webgpu.hpp", package:installdir("include", "wgpu-native"))
+        os.vcp("wgpu-native/wgpu.h", package:installdir("include", "wgpu-native", "webgpu"))
     end)
     
-    on_test(function (package) assert(package:check_cxxsnippets([[ void test() { wgpu::Instance instance; } ]], { includes = "wgpu-native/webgpu.hpp" })) end)
+    on_test(function (package)
+        assert(package:check_cxxsnippets([[ void test() { wgpu::Instance instance; } ]], { includes = "wgpu-native/webgpu.hpp", configs = { languages = "c++17" } }))
+    end)
 package_end()
 
 package("sdl2webgpu")
@@ -17,16 +31,26 @@ package("sdl2webgpu")
     set_license("MIT")
 
     add_urls("https://github.com/eliemichel/sdl2webgpu.git")
-    add_versions("2024.06.21", "ed785c8e48bd178fd6392d3c540c0ac4746f008d")
-
-    add_deps("cmake", "libsdl", "wgpu-native")
+    add_versions("2025-04-18", "eda8bedcb78a755f42c5efa00b732c62e89c23cb")
+    --add_versions("2024-10-16", "860a0444aff94d82e9cd96ea9085a7e4fefce55d")
+    
+    add_deps("libsdl2", "wgpu-native")
 
     on_install(function (package)
-        local configs = {}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
-        table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
-        import("package.tools.cmake").install(package, configs, {packagedeps = {"libsdl", "wgpu-native"}})
+        io.writefile("xmake.lua", [[
+            add_rules("mode.debug", "mode.release")
+            set_languages("cxx17")
+            add_requires("libsdl2", "wgpu-native")
+            target("sdl2wgpu")
+                add_packages("libsdl2", "wgpu-native")
+                set_kind("$(kind)")
+                add_files("sdl2webgpu.c")
+                add_headerfiles("sdl2webgpu.h")
+            target_end()
+        ]])
         os.vcp("sdl2webgpu.h", package:installdir("include"))
+        
+        import("package.tools.xmake").install(package)
     end)
 
     on_test(function (package)
@@ -34,24 +58,24 @@ package("sdl2webgpu")
     end)
 package_end()
 
-add_requires("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb", "snitch")
-
-add_rules("mode.debug", "mode.release", "mode.coverage")
-set_warnings("all", "error")
-set_languages("c++20")
-set_optimize("fastest")
+set_languages("cxx20")
+add_requires("sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb", "snitch")
 
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("plugin.vsxmake.autoupdate")
 target("wgpu-test")
     set_kind("binary")
-    add_packages("wgpu-native", "libsdl", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
+    add_packages("wgpu-native", "libsdl2", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
 
     set_warnings("error")
 
     add_files("src/*.cpp")
+    add_files("src/Math/*.cpp")
+    add_files("src/Helper/*.cpp")
 
     add_headerfiles("inc/*.hpp")
+    add_headerfiles("inc/Math/*.hpp")
+    add_headerfiles("inc/Helper/*.hpp")
 
     add_includedirs("inc")
     add_extrafiles("xmake.lua")
@@ -70,8 +94,8 @@ target("vector2-tests")
     set_runargs("-v", "full", "*")
 
     add_files("tests/Vector2.test.cpp")
-    add_files("src/Vector2.cpp")
-    add_headerfiles("inc/Vector2.hpp")
+    add_files("src/Math/Vector2.cpp")
+    add_headerfiles("inc/Math/Vector2.hpp")
     add_tests("tests-vector2")
 
     add_includedirs("inc")

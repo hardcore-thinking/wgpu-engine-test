@@ -32,6 +32,11 @@
 *.out
 *.app
 
+# Preprocessed source
+*.i
+*.ii
+
+
 # Directories
 .xmake
 build

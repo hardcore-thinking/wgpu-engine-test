@@ -3,7 +3,7 @@
 
 #include <snitch/snitch.hpp>
 
-#include <Vector2.hpp>
+#include <Math/Vector2.hpp>
 
 // MARK: Size
 TEST_CASE("Math::Vector2 is always 8 bytes in size", "[vector-size]") {

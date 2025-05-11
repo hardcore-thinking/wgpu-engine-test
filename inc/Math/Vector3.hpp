@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <cmath>
 
-#include <Vector2.hpp>
+#include <Math/Vector2.hpp>
 
 namespace Math {
     struct Vector3 {
