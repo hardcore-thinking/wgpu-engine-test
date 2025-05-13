@@ -5,6 +5,7 @@ Surface::Surface(Instance const& instance) {
     descriptor.nextInChain = nullptr;
     descriptor.label = wgpu::StringView("surface" + std::to_string(_id++));
 
+    _handle = instance->createSurface(descriptor);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create WGPU surface");
     }
@@ -13,7 +14,7 @@ Surface::Surface(Instance const& instance) {
 }
 
 Surface::Surface(Instance const& instance, wgpu::SurfaceDescriptor const& descriptor) {
-    _handle = instance.Handle().createSurface(descriptor);
+    _handle = instance->createSurface(descriptor);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create WGPU surface");
     }
@@ -29,6 +30,10 @@ Surface::~Surface() {
     }
 
     std::cout << "Surface destroyed successfully" << std::endl;
+}
+
+wgpu::Surface* Surface::operator->() {
+    return &_handle;
 }
 
 int Surface::_id = 0;

@@ -1,7 +1,7 @@
 #include <Helper/PipelineLayout.hpp>
 
 PipelineLayout::PipelineLayout(Device& device, PipelineLayoutDescriptor const& pipelineLayoutDescriptor) {
-    _handle = device.Handle().createPipelineLayout(pipelineLayoutDescriptor);
+    _handle = device->createPipelineLayout(pipelineLayoutDescriptor);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create pipeline layout");
     }
@@ -15,5 +15,9 @@ PipelineLayout::~PipelineLayout() {
         _handle = nullptr;
     }
 
-    std::cout << "PipelineLayout destroyed." << std::endl;
+    std::cout << "PipelineLayout destroyed" << std::endl;
+}
+
+wgpu::PipelineLayout* PipelineLayout::operator->() {
+    return &_handle;
 }

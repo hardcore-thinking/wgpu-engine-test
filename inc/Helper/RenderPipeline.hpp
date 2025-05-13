@@ -20,6 +20,8 @@ public:
         wgpu::RenderPipeline& Handle() { return _handle; }
         wgpu::RenderPipeline const& Handle() const { return _handle; }
 
+        wgpu::RenderPipeline* operator->();
+
     private:
         wgpu::RenderPipeline _handle = nullptr;
 };

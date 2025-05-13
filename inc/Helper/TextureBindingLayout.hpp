@@ -1,36 +1,17 @@
 #ifndef TEXUREBINDINGLAYOUT_HPP
 #define TEXUREBINDINGLAYOUT_HPP
 
+#include <iostream>
+
 #include <wgpu-native/webgpu.hpp>
-
-wgpu::BindGroupLayoutEntry CreateTextureBindingLayout(
-    uint32_t binding,
-    wgpu::ShaderStage visibility,
-    wgpu::TextureSampleType sampleType,
-    wgpu::TextureViewDimension viewDimension,
-    bool multisampled = false,
-    wgpu::ChainedStruct const* nextInChain = nullptr
-);
-
-void EditTextureBindingLayout(
-    wgpu::BindGroupLayoutEntry& bindGroupLayoutEntry,
-    uint32_t binding,
-    wgpu::ShaderStage visibility,
-    wgpu::TextureSampleType sampleType,
-    wgpu::TextureViewDimension viewDimension,
-    bool multisampled = false,
-    wgpu::ChainedStruct const* nextInChain = nullptr
-);
-
-void DisplayTextureBindingLayout(
-    wgpu::BindGroupLayoutEntry const& bindGroupLayoutEntry
-);
 
 struct TextureBindingLayout : public wgpu::BindGroupLayoutEntry {
     public:
         TextureBindingLayout() = delete;
-        TextureBindingLayout(uint32_t binding, wgpu::ShaderStage visibility, wgpu::TextureSampleType sampleType);
+        TextureBindingLayout(uint32_t textureBinding, wgpu::ShaderStage textureVisibility, wgpu::TextureSampleType textureSampleType);
 
+    public:
+        friend std::ostream& operator<<(std::ostream& out, TextureBindingLayout const& bindGroupLayoutEntry);
 };
 
 #endif // TEXTUREBINDINGLAYOUT_HPP

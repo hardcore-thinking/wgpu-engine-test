@@ -3,7 +3,7 @@
 Device::Device(Adapter& adapter, DeviceDescriptor const& descriptor) {
 	std::cout << "Device descriptor: " << &descriptor << std::endl;
 
-	_handle = adapter.Handle().requestDevice(descriptor);
+	_handle = adapter->requestDevice(descriptor);
 	if (_handle == nullptr) {
 		throw std::runtime_error("Failed to create WGPU device");
 	}
@@ -11,6 +11,15 @@ Device::Device(Adapter& adapter, DeviceDescriptor const& descriptor) {
 	std::cout << "Device created successfully: " << Handle() << std::endl;
 
 	_handle.getLimits(&_limits);
+}
+
+Device::~Device() {
+	if (_handle != nullptr) {
+		_handle.release();
+		_handle = nullptr;
+	}
+
+	std::cout << "Device destroyed successfully" << std::endl;
 }
 
 void Device::DisplayLimits() const {
@@ -50,4 +59,8 @@ void Device::DisplayLimits() const {
 	std::cout << "\t\t- " << "Min uniform buffer offset alignment: " << _limits.minUniformBufferOffsetAlignment << std::endl;
 
 	std::cout << std::endl;
+}
+
+wgpu::Device* Device::operator->() {
+	return &_handle;
 }

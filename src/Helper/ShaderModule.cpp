@@ -29,3 +29,16 @@ ShaderModule::ShaderModule(Device& device, std::filesystem::path const& path) {
 
     std::cout << "Shader module created: " << Handle() << std::endl;
 }
+
+ShaderModule::~ShaderModule() {
+	if (_handle != nullptr) {
+		_handle.release();
+		_handle = nullptr;
+	}
+
+	std::cout << "Shader module destroyed" << std::endl;
+}
+
+wgpu::ShaderModule* ShaderModule::operator->() {
+	return &_handle;
+}

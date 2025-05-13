@@ -31,6 +31,8 @@ class Adapter {
         void DisplayInfos() const;
         void DisplayLimits() const;
 
+        wgpu::Adapter* operator->();
+
     private:
         wgpu::Adapter _handle = nullptr;
         wgpu::SupportedFeatures _features {};

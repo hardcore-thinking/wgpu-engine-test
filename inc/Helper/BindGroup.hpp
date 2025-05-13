@@ -20,6 +20,8 @@ class BindGroup {
         wgpu::BindGroup& Handle() { return _handle; }
         wgpu::BindGroup const& Handle() const { return _handle; }
 
+        wgpu::BindGroup* operator->();
+
     private:
         wgpu::BindGroup _handle = nullptr;
 };

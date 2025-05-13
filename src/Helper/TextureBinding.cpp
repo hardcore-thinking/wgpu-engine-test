@@ -1,22 +1,14 @@
 #include <Helper/TextureBinding.hpp>
 
-wgpu::BindGroupEntry CreateTextureBinding(uint32_t binding, wgpu::TextureView& textureView) {
-	wgpu::BindGroupEntry bindGroupEntry {};
-	
-	bindGroupEntry.binding = binding;
-	bindGroupEntry.textureView = textureView;
-
-	return bindGroupEntry;
+TextureBinding::TextureBinding(uint32_t textureBinding, TextureView& textureViewHandle) {	
+	binding = textureBinding;
+	textureView = (WGPUTextureView) &textureViewHandle;
 }
 
-void EditTextureBinding(wgpu::BindGroupEntry& bindGroupEntry, uint32_t binding, wgpu::TextureView& textureView) {
-	bindGroupEntry.binding = binding;
+std::ostream& operator<<(std::ostream& out, TextureBinding const& bindGroupEntry) {
+	out << "- " << "Texture binding:" << std::endl;
+	out << "\t- " << "binding: " << bindGroupEntry.binding << std::endl;
+	out << "\t- " << "textureView: " << bindGroupEntry.textureView << std::endl;
 
-	bindGroupEntry.textureView = textureView;
-}
-
-void DisplayTextureBinding(wgpu::BindGroupEntry const& bindGroupEntry) {
-	std::cout << "- " << "Texture binding:" << std::endl;
-	std::cout << "\t- " << "binding: " << bindGroupEntry.binding << std::endl;
-	std::cout << "\t- " << "textureView: " << bindGroupEntry.textureView << std::endl;
+	return out;
 }

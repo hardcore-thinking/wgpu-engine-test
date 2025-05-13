@@ -3,8 +3,6 @@ set_warnings("all", "error")
 set_languages("cxx17")
 set_optimize("fastest")
 
-add_requires("wgpu-native v24.0.0+1", "libsdl2")
-
 package("wgpu-native-cpp")
     set_homepage("https://github.com/eliemichel/WebGPU-Cpp.git")
     set_description("CMake files that provide WebGPU for native and web development, easy-to-integrate and unified across implementations.")
@@ -60,6 +58,7 @@ package_end()
 
 set_languages("cxx20")
 add_requires("sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb", "snitch")
+add_requires("wgpu-native v24.0.0+1", "libsdl2")
 
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("plugin.vsxmake.autoupdate")

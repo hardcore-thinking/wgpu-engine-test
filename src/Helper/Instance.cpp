@@ -32,3 +32,11 @@ Instance::~Instance() {
 
     std::cout << "Instance destroyed successfully" << std::endl;
 }
+
+wgpu::Instance* Instance::operator->() {
+    return &_handle;
+}
+
+wgpu::Instance const* Instance::operator->() const {
+    return &_handle;
+}

@@ -1,7 +1,7 @@
 #include <Helper/Texture.hpp>
 
 Texture::Texture(Device& device, TextureDescriptor const& descriptor) {
-    _handle = device.Handle().createTexture(descriptor);
+    _handle = device->createTexture(descriptor);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create WGPU texture");
     }
@@ -17,4 +17,8 @@ Texture::~Texture() {
 
         std::cout << "Texture destroyed and released successfully" << std::endl;
     }
+}
+
+wgpu::Texture* Texture::operator->() {
+    return &_handle;
 }

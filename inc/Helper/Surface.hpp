@@ -20,6 +20,9 @@ class Surface {
         wgpu::Surface& Handle() { return _handle; }
         wgpu::Surface const& Handle() const { return _handle; }
 
+        wgpu::Surface* operator->();
+        wgpu::Surface const* operator->() const;
+
     protected:
         static int _id;
         wgpu::Surface _handle = nullptr;

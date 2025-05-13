@@ -1,7 +1,7 @@
 #include <Helper/BindGroup.hpp>
 
 BindGroup::BindGroup(Device& device, BindGroupDescriptor& bindGroupDescriptor) {
-    _handle = device.Handle().createBindGroup(bindGroupDescriptor);
+    _handle = device->createBindGroup(bindGroupDescriptor);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create bind group.");
     }
@@ -16,4 +16,8 @@ BindGroup::~BindGroup() {
     }
 
     std::cout << "Bind group destroyed successfully" << std::endl;
+}
+
+wgpu::BindGroup* BindGroup::operator->() {
+    return &_handle;
 }

@@ -1,36 +1,22 @@
 #include <Helper/SamplerBindingLayout.hpp>
 
-wgpu::BindGroupLayoutEntry CreateSamplerBindingLayout(uint32_t binding, wgpu::ShaderStage visibility, wgpu::SamplerBindingType type, wgpu::ChainedStruct const* nextInChain) {
-	wgpu::BindGroupLayoutEntry bindGroupLayoutEntry {};
-
-	bindGroupLayoutEntry.binding = binding;
-	bindGroupLayoutEntry.visibility = visibility;
+SamplerBindingLayout::SamplerBindingLayout(uint32_t samplerBinding, wgpu::ShaderStage samplerVisibility, wgpu::SamplerBindingType samplerType) {
+	binding = samplerBinding;
+	visibility = samplerVisibility;
 	
-	bindGroupLayoutEntry.sampler.type = type;
-	bindGroupLayoutEntry.sampler.nextInChain = nextInChain;
+	sampler.type = samplerType;
+	sampler.nextInChain = nullptr;
 
-	bindGroupLayoutEntry.buffer.type = wgpu::BufferBindingType::BindingNotUsed;
-	bindGroupLayoutEntry.texture.sampleType = wgpu::TextureSampleType::BindingNotUsed;
-	bindGroupLayoutEntry.storageTexture.access = wgpu::StorageTextureAccess::BindingNotUsed;
-
-	return bindGroupLayoutEntry;
+	buffer.type = wgpu::BufferBindingType::BindingNotUsed;
+	texture.sampleType = wgpu::TextureSampleType::BindingNotUsed;
+	storageTexture.access = wgpu::StorageTextureAccess::BindingNotUsed;
 }
 
-void EditSamplerBindingLayout(wgpu::BindGroupLayoutEntry& bindGroupLayoutEntry, uint32_t binding, wgpu::ShaderStage visibility, wgpu::SamplerBindingType type, wgpu::ChainedStruct const* nextInChain) {
-	bindGroupLayoutEntry.binding = binding;
-	bindGroupLayoutEntry.visibility = visibility;
+std::ostream& operator<<(std::ostream& out, SamplerBindingLayout const& bindGroupLayoutEntry) {
+	out << "- " << "Sampler binding layout:" << std::endl;
+	out << "\t- " << "binding: " << bindGroupLayoutEntry.binding << std::endl;
+	out << "\t- " << "visibility: " << bindGroupLayoutEntry.visibility << std::endl;
+	out << "\t- " << "type: " << bindGroupLayoutEntry.sampler.type << std::endl;
 
-	bindGroupLayoutEntry.sampler.type = type;
-	bindGroupLayoutEntry.sampler.nextInChain = nextInChain;
-
-	bindGroupLayoutEntry.buffer.type = wgpu::BufferBindingType::BindingNotUsed;
-	bindGroupLayoutEntry.texture.sampleType = wgpu::TextureSampleType::BindingNotUsed;
-	bindGroupLayoutEntry.storageTexture.access = wgpu::StorageTextureAccess::BindingNotUsed;
-}
-
-void DisplaySamplerBindingLayout(wgpu::BindGroupLayoutEntry const& bindGroupLayoutEntry) {
-	std::cout << "- " << "Sampler binding layout:" << std::endl;
-	std::cout << "\t- " << "binding: " << bindGroupLayoutEntry.binding << std::endl;
-	std::cout << "\t- " << "visibility: " << bindGroupLayoutEntry.visibility << std::endl;
-	std::cout << "\t- " << "type: " << bindGroupLayoutEntry.sampler.type << std::endl;
+	return out;
 }

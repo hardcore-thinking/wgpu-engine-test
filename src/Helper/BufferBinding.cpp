@@ -1,29 +1,18 @@
 #include <Helper/BufferBinding.hpp>
 
-wgpu::BindGroupEntry CreateBufferBinding(uint32_t binding, wgpu::Buffer& buffer, uint32_t size, uint32_t offset) {
-	wgpu::BindGroupEntry bindGroupEntry {};
-	
-	bindGroupEntry.binding = binding;
-	bindGroupEntry.buffer = buffer;
-	bindGroupEntry.size = size;
-	bindGroupEntry.offset = offset;
-
-	return bindGroupEntry;
+BufferBinding::BufferBinding(uint32_t bufferBinding, Buffer& bufferHandle, uint32_t bufferSize, uint32_t bufferOffset) {
+	binding = bufferBinding;
+	buffer = (WGPUBuffer)(&bufferHandle);
+	size = bufferSize;
+	offset = bufferOffset;
 }
 
-void EditBufferBinding(wgpu::BindGroupEntry& bindGroupEntry, uint32_t binding, wgpu::Buffer& buffer, uint32_t size, uint32_t offset) {
-	bindGroupEntry.binding = binding;
+std::ostream& operator<<(std::ostream& out, BufferBinding const& bufferBinding) {
+	out << "- " << "Buffer binding:" << std::endl;
+	out << "\t- " << "binding: " << bufferBinding.binding << std::endl;
+	out << "\t- " << "buffer: " << bufferBinding.buffer << std::endl;
+	out << "\t- " << "size: " << bufferBinding.size << std::endl;
+	out << "\t- " << "offset: " << bufferBinding.offset << std::endl;
 
-	bindGroupEntry.buffer = buffer;
-	bindGroupEntry.size = size;
-	bindGroupEntry.offset = offset;
+	return out;
 }
-
-void DisplayBufferBinding(wgpu::BindGroupEntry const& bindGroupEntry) {
-	std::cout << "- " << "Buffer binding:" << std::endl;
-	std::cout << "\t- " << "binding: " << bindGroupEntry.binding << std::endl;
-	std::cout << "\t- " << "buffer: " << bindGroupEntry.buffer << std::endl;
-	std::cout << "\t- " << "size: " << bindGroupEntry.size << std::endl;
-	std::cout << "\t- " << "offset: " << bindGroupEntry.offset << std::endl;
-}
-

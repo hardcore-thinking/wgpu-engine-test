@@ -1,32 +1,19 @@
 #ifndef BUFFERBINDING_HPP
 #define BUFFERBINDING_HPP
 
+#include <iostream>
+
 #include <wgpu-native/webgpu.hpp>
 
-wgpu::BindGroupEntry CreateBufferBinding(
-    uint32_t binding,
-    wgpu::Buffer& buffer,
-    uint32_t size,
-    uint32_t offset = 0
-);
-
-void EditBufferBinding(
-    wgpu::BindGroupEntry& bindGroupEntry,
-    uint32_t binding,
-    wgpu::Buffer& buffer,
-    uint32_t size,
-    uint32_t offset = 0
-);
-
-void DisplayBufferBinding(
-    wgpu::BindGroupEntry const& bindGroupEntry
-);
+#include <Helper/Buffer.hpp>
 
 struct BufferBinding : public wgpu::BindGroupEntry {
     public:
         BufferBinding() = delete;
-        BufferBinding(uint32_t binding, wgpu::Buffer& buffer, uint32_t size, uint32_t offset = 0);
+        BufferBinding(uint32_t bufferBinding, Buffer& bufferHandle, uint32_t bufferSize, uint32_t bufferOffset);
 
+    public:
+        friend std::ostream& operator<<(std::ostream& out, BufferBinding const& bufferBinding);
 };
 
 #endif // BUFFERBINDING_HPP

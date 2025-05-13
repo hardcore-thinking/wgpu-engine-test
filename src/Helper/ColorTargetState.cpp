@@ -2,7 +2,7 @@
 
 ColorTargetState::ColorTargetState(Adapter& adapter, CompatibleSurface& compatibleSurface, BlendState const& blendState) {
     wgpu::SurfaceCapabilities surfaceCapabilities;
-	compatibleSurface.Handle().getCapabilities(adapter.Handle(), &surfaceCapabilities);
+	compatibleSurface->getCapabilities(adapter.Handle(), &surfaceCapabilities);
     
     blend = &blendState;
 	format = surfaceCapabilities.formats[0];

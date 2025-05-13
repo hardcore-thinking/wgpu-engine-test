@@ -14,6 +14,8 @@ class PipelineLayout {
 
         wgpu::PipelineLayout& Handle() { return _handle; }
         wgpu::PipelineLayout const& Handle() const { return _handle; }
+
+        wgpu::PipelineLayout* operator->();
     
     private:
         wgpu::PipelineLayout _handle = nullptr;

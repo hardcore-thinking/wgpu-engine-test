@@ -42,6 +42,10 @@ Adapter::~Adapter() {
     std::cout << "Adapter destroyed successfully" << std::endl;
 }
 
+wgpu::Adapter* Adapter::operator->() {
+	return &_handle;
+}
+
 void Adapter::DisplayFeatures() const {
 	std::cout << "\t - " << "Features (found " << _features.featureCount << "):" << std::endl;
 	for (int i = 0; i < _features.featureCount; ++i) {

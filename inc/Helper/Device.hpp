@@ -14,7 +14,7 @@ class Device {
     public:
         Device() = default;
         Device(Adapter& adapter, DeviceDescriptor const& descriptor);
-        ~Device() = default;
+        ~Device();
 
     public:
         wgpu::Device& Handle() { return _handle; }
@@ -22,6 +22,8 @@ class Device {
 
         wgpu::Limits const& Limits() const { return _limits; }
         void DisplayLimits() const;
+
+        wgpu::Device* operator->();
 
     private:
         wgpu::Device _handle = nullptr;

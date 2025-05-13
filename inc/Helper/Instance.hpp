@@ -15,6 +15,9 @@ class Instance {
         wgpu::Instance& Handle() { return _handle; }
         wgpu::Instance const& Handle() const { return _handle; }
 
+        wgpu::Instance* operator->();
+        wgpu::Instance const* operator->() const;
+
     private:
         wgpu::Instance _handle = nullptr;
 };

@@ -20,6 +20,8 @@ class Texture {
         wgpu::Texture& Handle() { return _handle; }
         wgpu::Texture const& Handle() const { return _handle; }
 
+        wgpu::Texture* operator->();
+
     private:
         wgpu::Texture _handle = nullptr;
 };
