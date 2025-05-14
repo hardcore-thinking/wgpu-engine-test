@@ -16,7 +16,7 @@ Buffer::~Buffer() {
         _handle = nullptr;
     }
 
-    std::cout << "Buffer destroyed successfully: " << Handle() << std::endl;
+    std::cout << "Buffer destroyed successfully" << std::endl;
 }
 
 wgpu::Buffer* Buffer::operator->() {

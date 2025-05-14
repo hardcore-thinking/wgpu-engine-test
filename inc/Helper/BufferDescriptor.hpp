@@ -9,11 +9,11 @@
 struct BufferDescriptor : public wgpu::BufferDescriptor {
     public:
         BufferDescriptor() = default;
-        BufferDescriptor(size_t size, wgpu::BufferUsage usage);
+        BufferDescriptor(size_t size, wgpu::BufferUsage usage, std::string overrideLabel = "");
 
     public:
         static int counter;
-        std::string newLabel = "buffer";
+        std::string newLabel = "";
 };
 
 #endif // BUFFERDESCRIPTOR_HPP

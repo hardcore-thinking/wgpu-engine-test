@@ -434,7 +434,7 @@ int main() {
 		Device device(adapter, deviceDescriptor);
 		wgpu::Queue queue = device->getQueue();
 		surface.Configure(adapter, device, window);
-	
+
 		wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
 
 		std::vector<wgpu::TextureFormat> viewFormats { depthTextureFormat };
@@ -447,6 +447,12 @@ int main() {
 		std::vector<BindGroupLayout> bindGroupLayouts {};
 		std::vector<BindGroup> bindGroups {};
 		std::vector<VertexAttributes> vertexData {};
+
+		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
+		Buffer uniformBuffer(device, uniformBufferDescriptor);
+
+		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, "vertex_buffer");
+		Buffer vertexBuffer(device, vertexBufferDescriptor);
 
 		std::vector<VertexAttribute> vertexAttributes;
 		vertexAttributes.push_back(VertexAttribute(0, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, position)));
@@ -463,9 +469,6 @@ int main() {
 		bindGroupLayoutEntries.push_back(TextureBindingLayout(1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float));
 		bindGroupLayoutEntries.push_back(SamplerBindingLayout(2, wgpu::ShaderStage::Fragment, wgpu::SamplerBindingType::Filtering));
 
-		BufferDescriptor bufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform);
-		Buffer uniformBuffer(device, bufferDescriptor);
-
 		bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
 		if (!success) {
 			logger.Error("Failed to load geometry.");
@@ -481,19 +484,16 @@ int main() {
 
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
 		Sampler sampler(device, samplerDescriptor);
-		
+
+		queue.writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
+		int indexCount = static_cast<int>(vertexData.size());
+
 		std::vector<BindGroupEntry> bindGroupEntries {};
 		bindGroupEntries.push_back(BufferBinding(0, uniformBuffer, sizeof(MyUniforms), 0));
 		bindGroupEntries.push_back(TextureBinding(1, textureView));
 		bindGroupEntries.push_back(SamplerBinding(2, sampler));
 
 		RenderPipeline renderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, bindGroups, vertexBufferLayouts, bindGroupLayoutEntries, bindGroupEntries);
-
-		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex);
-		Buffer vertexBuffer(device, vertexBufferDescriptor);
-
-		queue.writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
-		int indexCount = static_cast<int>(vertexData.size());
 
 		MyUniforms uniforms {};
 	
@@ -503,11 +503,7 @@ int main() {
 		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);
 		uniforms.modelMatrix = Math::Matrix4x4::Transpose(S);
 	
-		Math::Matrix4x4 L = Math::Matrix4x4::LookAt(
-			cameraPosition, // eye
-			Math::Vector3( 0.0f,  0.0f, 0.0f), // target
-			Math::Vector3( 0.0f,  0.0f, 1.0f)  // up
-		);
+		Math::Matrix4x4 L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3( 0.0f,  0.0f, 0.0f), Math::Vector3( 0.0f,  0.0f, 1.0f));
 		uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
 
 		float ratio = windowWidth / windowHeight;
@@ -565,7 +561,7 @@ int main() {
 			wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
 			commandEncoderDescriptor.label = wgpu::StringView("command_encoder");
 			commandEncoderDescriptor.nextInChain = nullptr;
-		
+
 			wgpu::CommandEncoder commandEncoder = device->createCommandEncoder(commandEncoderDescriptor);
 			if (commandEncoder == nullptr) {
 				logger.Error("Failed to create command encoder.");
@@ -581,6 +577,8 @@ int main() {
 				renderPassColorAttachments[0].storeOp = wgpu::StoreOp::Store;
 				renderPassColorAttachments[0].view = textureView;
 				renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.05f, 0.05f, 0.05f, 1.0f };
+				renderPassColorAttachments[0].depthSlice = 0;
+				renderPassColorAttachments[0].nextInChain = nullptr;
 
 				std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments{};
 				renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment{});
@@ -594,7 +592,7 @@ int main() {
 				renderPassDepthStencilAttachments[0].stencilStoreOp = wgpu::StoreOp::Store;
 				renderPassDepthStencilAttachments[0].stencilReadOnly = true;
 
-				wgpu::QuerySet occlusionQuerySet{};
+				wgpu::QuerySet occlusionQuerySet {};
 
 				wgpu::RenderPassDescriptor renderPassDescriptor{};
 				renderPassDescriptor.colorAttachmentCount = renderPassColorAttachments.size();
