@@ -71,10 +71,12 @@ target("wgpu-test")
     add_files("src/*.cpp")
     add_files("src/Math/*.cpp")
     add_files("src/Helper/*.cpp")
+    add_files("src/Resources/*.cpp")
 
     add_headerfiles("inc/*.hpp")
     add_headerfiles("inc/Math/*.hpp")
     add_headerfiles("inc/Helper/*.hpp")
+    add_headerfiles("inc/Resources/*.hpp")
 
     add_includedirs("inc")
     add_extrafiles("xmake.lua")

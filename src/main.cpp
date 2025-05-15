@@ -17,74 +17,13 @@
 
 #include <sdl2webgpu.h>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <Window.hpp>
 
-#include <Helper/Instance.hpp>
-#include <Helper/CompatibleSurface.hpp>
-#include <Helper/Limits.hpp>
-#include <Helper/Adapter.hpp>
-#include <Helper/DeviceLostCallbackInfo.hpp>
-#include <Helper/UncapturedErrorCallbackInfo.hpp>
-#include <Helper/DeviceDescriptor.hpp>
-#include <Helper/Device.hpp>
-#include <Helper/Queue.hpp>
+#include <Helper/Handles.hpp>
+#include <Helper/Descriptors.hpp>
+#include <Helper/ParametersStructs.hpp>
 
-#include <Helper/StencilFaceState.hpp>
-#include <Helper/DepthStencilState.hpp>
-#include <Helper/ConstantEntry.hpp>
-#include <Helper/BlendComponent.hpp>
-#include <Helper/BlendState.hpp>
-#include <Helper/ColorTargetState.hpp>
-#include <Helper/ShaderModule.hpp>
-#include <Helper/FragmentState.hpp>
-#include <Helper/VertexState.hpp>
-#include <Helper/MultisampleState.hpp>
-#include <Helper/PrimitiveState.hpp>
-#include <Helper/PipelineLayoutDescriptor.hpp>
-#include <Helper/PipelineLayout.hpp>
-#include <Helper/RenderPipelineDescriptor.hpp>
-#include <Helper/RenderPipeline.hpp>
-
-#include <Helper/BufferDescriptor.hpp>
-#include <Helper/Buffer.hpp>
-#include <Helper/TextureDescriptor.hpp>
-#include <Helper/Texture.hpp>
-#include <Helper/TextureViewDescriptor.hpp>
-#include <Helper/TextureView.hpp>
-#include <Helper/SamplerDescriptor.hpp>
-#include <Helper/Sampler.hpp>
-
-#include <Helper/VertexAttribute.hpp>
-#include <Helper/VertexBufferLayout.hpp>
-
-#include <Helper/BufferBindingLayout.hpp>
-#include <Helper/BufferBinding.hpp>
-#include <Helper/TextureBindingLayout.hpp>
-#include <Helper/TextureBinding.hpp>
-#include <Helper/SamplerBindingLayout.hpp>
-#include <Helper/SamplerBinding.hpp>
-
-#include <Helper/BindGroupLayoutDescriptor.hpp>
-#include <Helper/BindGroupLayout.hpp>
-#include <Helper/BindGroupDescriptor.hpp>
-#include <Helper/BindGroup.hpp>
-
-#include <Helper/CommandEncoderDescriptor.hpp>
-#include <Helper/CommandEncoder.hpp>
-#include <Helper/RenderPassColorAttachment.hpp>
-#include <Helper/RenderPassDepthStencilAttachment.hpp>
-#include <Helper/QuerySetDescriptor.hpp>
-#include <Helper/QuerySet.hpp>
-#include <Helper/RenderPassDescriptor.hpp>
-#include <Helper/RenderPassEncoder.hpp>
-#include <Helper/CommandBufferDescriptor.hpp>
-#include <Helper/CommandBuffer.hpp>
+#include <Resources/Geometry.hpp>
 
 #include <Logger.hpp>
 #include <Math/Math.hpp>
@@ -92,6 +31,12 @@
 #include <Math/Vector2.hpp>
 #include <Math/Vector3.hpp>
 #include <Math/Vector4.hpp>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
@@ -109,13 +54,6 @@ struct MyUniforms {
 
 static_assert(sizeof(MyUniforms) % 16 == 0, "MyUniforms must be aligned to 16 bytes.");
 
-struct VertexAttributes {
-	Math::Vector3 position {};
-	Math::Vector3 normal {};
-	Math::Vector3 color {};
-	Math::Vector2 uv {};
-};
-
 Logger logger {};
 
 auto DeviceLostCallback = [](wgpu::Device const* device, wgpu::DeviceLostReason reason, wgpu::StringView message, void* userData1) {
@@ -126,100 +64,6 @@ auto UncapturedErrorCallback = [](wgpu::Device const* device, wgpu::ErrorType ty
 };
 
 bool running = false;
-
-static void WriteMipMaps(wgpu::Device device, wgpu::Texture texture, wgpu::Extent3D textureSize, uint32_t mipLevelCount, unsigned char* const data) {
-	wgpu::Queue queue = device.getQueue();
-
-	wgpu::TexelCopyTextureInfo destination {};
-	destination.texture = texture;
-	destination.origin = { 0, 0, 0 };
-	destination.aspect = wgpu::TextureAspect::All;
-
-	wgpu::TexelCopyBufferLayout source {};
-	source.offset = 0;
-
-	wgpu::Extent3D mipLevelSize = textureSize;
-	std::vector<uint8_t> previousLevelPixels;
-	wgpu::Extent3D previousMipLevelSize;
-	for (uint32_t level = 0; level < mipLevelCount; ++level) {
-		std::vector<uint8_t> pixels(4 * mipLevelSize.width * mipLevelSize.height);
-
-		if (level == 0) {
-			std::memcpy(pixels.data(), data, pixels.size());
-		}
-
-		else {
-			for (uint32_t i = 0; i < mipLevelSize.width; ++i) {
-				for (uint32_t j = 0; j < mipLevelSize.height; ++j) {
-					uint8_t* p = &pixels[4 * (j * mipLevelSize.width + i)];
-
-					uint8_t* p00 = &previousLevelPixels[4 * ((2 * j + 0) * previousMipLevelSize.width + (2 * i + 0))];
-					uint8_t* p01 = &previousLevelPixels[4 * ((2 * j + 0) * previousMipLevelSize.width + (2 * i + 1))];
-					uint8_t* p10 = &previousLevelPixels[4 * ((2 * j + 1) * previousMipLevelSize.width + (2 * i + 0))];
-					uint8_t* p11 = &previousLevelPixels[4 * ((2 * j + 1) * previousMipLevelSize.width + (2 * i + 1))];
-
-					p[0] = (p00[0] + p01[0] + p10[0] + p11[0]) / 4;
-					p[1] = (p00[1] + p01[1] + p10[1] + p11[1]) / 4;
-					p[2] = (p00[2] + p01[2] + p10[2] + p11[2]) / 4;
-					p[3] = (p00[3] + p01[3] + p10[3] + p11[3]) / 4;
-				}
-			}
-		}
-
-		destination.mipLevel = level;
-		source.bytesPerRow = 4 * mipLevelSize.width;
-		source.rowsPerImage = mipLevelSize.height;
-		queue.writeTexture(destination, pixels.data(), pixels.size(), source, mipLevelSize);
-
-		previousLevelPixels = std::move(pixels);
-		previousMipLevelSize = mipLevelSize;
-		mipLevelSize.width /= 2;
-		mipLevelSize.height /= 2;
-	}
-
-	queue.release();
-}
-
-static wgpu::Texture LoadTexture(std::filesystem::path const& path, wgpu::Device device, wgpu::TextureView* pTextureView = nullptr) {
-	int width = 0;
-	int height = 0;
-	int channels = 0;
-	unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
-	if (data == nullptr) {
-		std::cerr << "Failed to load texture: " << path << std::endl;
-		return nullptr;
-	}
-
-	wgpu::TextureDescriptor textureDescriptor {};
-	textureDescriptor.dimension = wgpu::TextureDimension::_2D;
-	textureDescriptor.format = wgpu::TextureFormat::RGBA8Unorm;
-	textureDescriptor.size = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
-	textureDescriptor.mipLevelCount = std::bit_width(std::max(textureDescriptor.size.width, textureDescriptor.size.height));
-	textureDescriptor.sampleCount = 1;
-	textureDescriptor.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
-	textureDescriptor.viewFormatCount = 0;
-	textureDescriptor.nextInChain = nullptr;
-	wgpu::Texture texture = device.createTexture(textureDescriptor);
-	
-	WriteMipMaps(device, texture, textureDescriptor.size, textureDescriptor.mipLevelCount, data);
-
-	stbi_image_free(data);
-
-	if (pTextureView != nullptr) {
-		wgpu::TextureViewDescriptor textureViewDescriptor {};
-		textureViewDescriptor.aspect = wgpu::TextureAspect::All;
-		textureViewDescriptor.baseArrayLayer = 0;
-		textureViewDescriptor.arrayLayerCount = 1;
-		textureViewDescriptor.baseMipLevel = 0;
-		textureViewDescriptor.mipLevelCount = textureDescriptor.mipLevelCount;
-		textureViewDescriptor.dimension = wgpu::TextureViewDimension::_2D;
-		textureViewDescriptor.format = textureDescriptor.format;
-		textureViewDescriptor.nextInChain = nullptr;
-		*pTextureView = texture.createView(textureViewDescriptor);
-	}
-
-	return texture;
-}
 
 static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& surface) {
 	wgpu::SurfaceTexture surfaceTexture {};
@@ -271,120 +115,6 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 	wgpu::TextureView textureView = texture.createView(textureViewDescriptor);
 
 	return textureView;
-}
-
-static bool LoadGeometry(std::filesystem::path const& path, std::vector<float>& pointData, std::vector<uint16_t>& indexData, int dimensions) {
-	std::ifstream file(path);
-	if (!file.is_open()) {
-		return false;
-	}
-
-	pointData.clear();
-	indexData.clear();
-
-	enum class Section {
-		None,
-		Points,
-		Indices,
-	};
-
-	Section currentSection = Section::None;
-
-	float value = 0.0;
-	uint16_t index = 0;
-	std::string line = "";
-	while (!file.eof()) {
-		std::getline(file, line);
-
-		if (!line.empty() && line.back() == '\r') {
-			line.pop_back();
-		}
-
-		if (line == "[points]") {
-			currentSection = Section::Points;
-		}
-
-		else if (line == "[indices]") {
-			currentSection = Section::Indices;
-		}
-
-		else if (line[0] == '#' || line.empty()) {
-			// Do nothing, this is a comment
-		}
-
-		else if (currentSection == Section::Points) {
-			std::istringstream iss(line);
-			for (int i = 0; i < dimensions + 3; ++i) {
-				iss >> value;
-				pointData.push_back(value);
-			}
-		}
-
-		else if (currentSection == Section::Indices) {
-			std::istringstream iss(line);
-			for (int i = 0; i < 3; ++i) {
-				iss >> index;
-				indexData.push_back(index);
-			}
-		}
-	}
-	return true;
-}
-
-static bool LoadGeometryFromOBJ(std::filesystem::path const& path, std::vector<VertexAttributes>& vertexData) {
-	tinyobj::attrib_t attrib {};
-	std::vector<tinyobj::shape_t> shapes {};
-	std::vector<tinyobj::material_t> materials {};
-
-	std::string warn {};
-	std::string err {};
-
-	bool result = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.string().c_str());
-
-	if (!warn.empty()) {
-		std::cerr << "Warning: " << warn << std::endl;
-	}
-
-	if (!err.empty()) {
-		std::cerr << "Error: " << err << std::endl;
-	}
-
-	if (!result) {
-		return false;
-	}
-
-	for (auto const& shape : shapes) {
-		size_t offset = vertexData.size();
-		vertexData.resize(offset + shape.mesh.indices.size());
-		for (size_t i = 0; i < shape.mesh.indices.size(); i++) {
-			tinyobj::index_t idx = shape.mesh.indices[i];
-
-			vertexData[i].position = {
-				 attrib.vertices[3 * idx.vertex_index + 0],
-				-attrib.vertices[3 * idx.vertex_index + 2],
-				 attrib.vertices[3 * idx.vertex_index + 1]
-			};
-
-			vertexData[i].normal = {
-				 attrib.normals[3 * idx.normal_index + 0],
-				-attrib.normals[3 * idx.normal_index + 2],
-				 attrib.normals[3 * idx.normal_index + 1]
-			};
-
-			vertexData[i].color = {
-				 attrib.colors[3 * idx.vertex_index + 0],
-				 attrib.colors[3 * idx.vertex_index + 1],
-				 attrib.colors[3 * idx.vertex_index + 2]
-			};
-
-			vertexData[i].uv = {
-				 attrib.texcoords[2 * idx.texcoord_index + 0],
-				 1 - attrib.texcoords[2 * idx.texcoord_index + 1]
-			};
-		}
-	}
-
-	return true;
 }
 
 static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, CompatibleSurface& surface, std::vector<BindGroupLayout>& bindGroupLayouts, std::vector<BindGroup>& bindGroups, std::vector<VertexBufferLayout> const& vertexBufferLayouts, std::vector<BindGroupLayoutEntry> const& bindGroupLayoutEntries, std::vector<BindGroupEntry> const& bindGroupEntries) {
