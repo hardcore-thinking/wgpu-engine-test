@@ -225,10 +225,6 @@ int main() {
 		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
 		Buffer uniformBuffer(device, uniformBufferDescriptor);
 
-		std::cout << " • vertexData.size(): " << vertexData.size() << std::endl;
-		std::cout << " • sizeof(VertexAttributes): " << sizeof(VertexAttributes) << std::endl;
-		std::cout << " • vertexData.size() * sizeof(VertexAttributes): " << vertexData.size() * sizeof(VertexAttributes) << std::endl;
-
 		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, "vertex_buffer");
 		Buffer vertexBuffer(device, vertexBufferDescriptor);
 
