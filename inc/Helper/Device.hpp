@@ -23,7 +23,8 @@ class Device {
         wgpu::Limits const& Limits() const { return _limits; }
         void DisplayLimits() const;
 
-        wgpu::Device* operator->();
+        wgpu::Device* operator -> ();
+        wgpu::Device const* operator -> () const;
 
     private:
         wgpu::Device _handle = nullptr;

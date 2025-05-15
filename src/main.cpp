@@ -33,6 +33,7 @@
 #include <Helper/UncapturedErrorCallbackInfo.hpp>
 #include <Helper/DeviceDescriptor.hpp>
 #include <Helper/Device.hpp>
+#include <Helper/Queue.hpp>
 
 #include <Helper/StencilFaceState.hpp>
 #include <Helper/DepthStencilState.hpp>
@@ -73,6 +74,17 @@
 #include <Helper/BindGroupLayout.hpp>
 #include <Helper/BindGroupDescriptor.hpp>
 #include <Helper/BindGroup.hpp>
+
+#include <Helper/CommandEncoderDescriptor.hpp>
+#include <Helper/CommandEncoder.hpp>
+#include <Helper/RenderPassColorAttachment.hpp>
+#include <Helper/RenderPassDepthStencilAttachment.hpp>
+#include <Helper/QuerySetDescriptor.hpp>
+#include <Helper/QuerySet.hpp>
+#include <Helper/RenderPassDescriptor.hpp>
+#include <Helper/RenderPassEncoder.hpp>
+#include <Helper/CommandBufferDescriptor.hpp>
+#include <Helper/CommandBuffer.hpp>
 
 #include <Logger.hpp>
 #include <Math/Math.hpp>
@@ -432,7 +444,8 @@ int main() {
 		DeviceDescriptor deviceDescriptor(adapter, limits, deviceLostCallbackInfo, uncapturedErrorCallbackInfo);
 
 		Device device(adapter, deviceDescriptor);
-		wgpu::Queue queue = device->getQueue();
+		Queue queue(device);
+
 		surface.Configure(adapter, device, window);
 
 		wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
@@ -447,12 +460,6 @@ int main() {
 		std::vector<BindGroupLayout> bindGroupLayouts {};
 		std::vector<BindGroup> bindGroups {};
 		std::vector<VertexAttributes> vertexData {};
-
-		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
-		Buffer uniformBuffer(device, uniformBufferDescriptor);
-
-		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, "vertex_buffer");
-		Buffer vertexBuffer(device, vertexBufferDescriptor);
 
 		std::vector<VertexAttribute> vertexAttributes;
 		vertexAttributes.push_back(VertexAttribute(0, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, position)));
@@ -475,19 +482,29 @@ int main() {
 			return EXIT_FAILURE;
 		}
 
-		TextureView textureView;
-		wgpu::Texture texture = LoadTexture("resources/de-geulasse.png", device.Handle(), &textureView);
-		if (texture == nullptr) {
-			logger.Error("Failed to load texture.");
-			return EXIT_FAILURE;
-		}
+		logger.Info("Geometry loaded successfully.");
 
+		TextureView textureView;
+		Texture texture = LoadTexture("resources/de-geulasse.png", device.Handle(), &textureView.Handle());
+
+		logger.Info("Texture loaded successfully.");
+		
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
 		Sampler sampler(device, samplerDescriptor);
 
-		queue.writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
-		int indexCount = static_cast<int>(vertexData.size());
+		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
+		Buffer uniformBuffer(device, uniformBufferDescriptor);
 
+		std::cout << " • vertexData.size(): " << vertexData.size() << std::endl;
+		std::cout << " • sizeof(VertexAttributes): " << sizeof(VertexAttributes) << std::endl;
+		std::cout << " • vertexData.size() * sizeof(VertexAttributes): " << vertexData.size() * sizeof(VertexAttributes) << std::endl;
+
+		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, "vertex_buffer");
+		Buffer vertexBuffer(device, vertexBufferDescriptor);
+
+		queue->writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
+		int indexCount = static_cast<int>(vertexData.size());
+ 
 		std::vector<BindGroupEntry> bindGroupEntries {};
 		bindGroupEntries.push_back(BufferBinding(0, uniformBuffer, sizeof(MyUniforms), 0));
 		bindGroupEntries.push_back(TextureBinding(1, textureView));
@@ -516,7 +533,7 @@ int main() {
 		uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 		uniforms.time = 1.0f;
 
-		queue.writeBuffer(uniformBuffer.Handle(), 0, &uniforms, sizeof(MyUniforms));
+		queue->writeBuffer(uniformBuffer.Handle(), 0, &uniforms, sizeof(MyUniforms));
 
 		Uint8 const* keyboard = SDL_GetKeyboardState(nullptr);
 
@@ -537,96 +554,51 @@ int main() {
 				}
 			}
 
-			wgpu::TextureView textureView = GetNextTexture(device.Handle(), surface.Handle());
-			if (textureView == nullptr) {
-				logger.Error("Failed to get texture view.");
-				return EXIT_FAILURE;
-			}
+			TextureView textureView = GetNextTexture(device.Handle(), surface.Handle());
 
 			uniforms.time = -static_cast<float>(SDL_GetTicks()) / 1000;
-			queue.writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
+			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
 			cameraPosition = Math::Vector3(-300.0f * std::cos(uniforms.time), -400.0f, -300.0f * std::sin(uniforms.time));
 			uniforms.cameraPosition = cameraPosition;
 
 			//std::cout << "cameraPosition: " << cameraPosition << std::endl;
 
-			queue.writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, cameraPosition), &uniforms.cameraPosition, sizeof(MyUniforms::cameraPosition));
+			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, cameraPosition), &uniforms.cameraPosition, sizeof(MyUniforms::cameraPosition));
 
 			L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 0.0f, 1.0f));
 
 			uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
-			queue.writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
+			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
 
-			wgpu::CommandEncoderDescriptor commandEncoderDescriptor {};
-			commandEncoderDescriptor.label = wgpu::StringView("command_encoder");
-			commandEncoderDescriptor.nextInChain = nullptr;
+			CommandEncoderDescriptor commandEncoderDescriptor;
+			CommandEncoder commandEncoder(device, commandEncoderDescriptor);
 
-			wgpu::CommandEncoder commandEncoder = device->createCommandEncoder(commandEncoderDescriptor);
-			if (commandEncoder == nullptr) {
-				logger.Error("Failed to create command encoder.");
-				return EXIT_FAILURE;
-			}
+			std::vector<RenderPassColorAttachment> renderPassColorAttachments {};
+			renderPassColorAttachments.push_back(RenderPassColorAttachment(textureView));
 
-			wgpu::RenderPassEncoder renderPassEncoder = nullptr;
-			{
-				std::vector<wgpu::RenderPassColorAttachment> renderPassColorAttachments{};
-				renderPassColorAttachments.resize(1, wgpu::RenderPassColorAttachment{});
-				renderPassColorAttachments[0].loadOp = wgpu::LoadOp::Clear;
-				renderPassColorAttachments[0].resolveTarget = nullptr;
-				renderPassColorAttachments[0].storeOp = wgpu::StoreOp::Store;
-				renderPassColorAttachments[0].view = textureView;
-				renderPassColorAttachments[0].clearValue = wgpu::Color{ 0.05f, 0.05f, 0.05f, 1.0f };
-				renderPassColorAttachments[0].depthSlice = 0;
-				renderPassColorAttachments[0].nextInChain = nullptr;
+			RenderPassDepthStencilAttachment renderPassDepthStencilAttachment(depthTextureView);
 
-				std::vector<wgpu::RenderPassDepthStencilAttachment> renderPassDepthStencilAttachments{};
-				renderPassDepthStencilAttachments.resize(1, wgpu::RenderPassDepthStencilAttachment{});
-				renderPassDepthStencilAttachments[0].view = depthTextureView.Handle();
-				renderPassDepthStencilAttachments[0].depthClearValue = 1.0f;
-				renderPassDepthStencilAttachments[0].depthLoadOp = wgpu::LoadOp::Clear;
-				renderPassDepthStencilAttachments[0].depthStoreOp = wgpu::StoreOp::Store;
-				renderPassDepthStencilAttachments[0].depthReadOnly = false;
-				renderPassDepthStencilAttachments[0].stencilClearValue = 0;
-				renderPassDepthStencilAttachments[0].stencilLoadOp = wgpu::LoadOp::Clear;
-				renderPassDepthStencilAttachments[0].stencilStoreOp = wgpu::StoreOp::Store;
-				renderPassDepthStencilAttachments[0].stencilReadOnly = true;
+			QuerySet occlusionQuerySet;
 
-				wgpu::QuerySet occlusionQuerySet {};
+			RenderPassDescriptor renderPassDescriptor(renderPassColorAttachments, renderPassDepthStencilAttachment);
+			RenderPassEncoder renderPassEncoder(commandEncoder, renderPassDescriptor);
 
-				wgpu::RenderPassDescriptor renderPassDescriptor{};
-				renderPassDescriptor.colorAttachmentCount = renderPassColorAttachments.size();
-				renderPassDescriptor.colorAttachments = renderPassColorAttachments.data();
-				renderPassDescriptor.depthStencilAttachment = &renderPassDepthStencilAttachments[0];
-				renderPassDescriptor.label = wgpu::StringView("render_pass");
-				renderPassDescriptor.nextInChain = nullptr;
-				renderPassDescriptor.occlusionQuerySet = occlusionQuerySet;
-				renderPassDescriptor.timestampWrites = nullptr;
+			renderPassEncoder->setPipeline(renderPipeline.Handle());
+			renderPassEncoder->setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
+			renderPassEncoder->setBindGroup(0, bindGroups[0].Handle(), 0, nullptr);
+			renderPassEncoder->draw(indexCount, 1, 0, 0);
 
-				renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-				if (renderPassEncoder == nullptr) {
-					logger.Error("Failed to create render pass encoder.");
-					return EXIT_FAILURE;
-				}
-			}
+			renderPassEncoder->end();
 
-			renderPassEncoder.setPipeline(renderPipeline.Handle());
-			renderPassEncoder.setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
-			renderPassEncoder.setBindGroup(0, bindGroups[0].Handle(), 0, nullptr);
-			renderPassEncoder.draw(indexCount, 1, 0, 0);
+			CommandBufferDescriptor commandBufferDescriptor;
+			CommandBuffer commandBuffer(commandEncoder);
 		
-			renderPassEncoder.end();
+			queue->submit(commandBuffer.Handle());
 
-			wgpu::CommandBufferDescriptor commandBufferDescriptor {};
-			commandBufferDescriptor.label = wgpu::StringView("command_buffer");
-			commandBufferDescriptor.nextInChain = nullptr;
-			wgpu::CommandBuffer commandBuffer = commandEncoder.finish();
-		
-			queue.submit(commandBuffer);
-
-			renderPassEncoder.release();
-			commandEncoder.release();
-			commandBuffer.release();
+			renderPassEncoder->release();
+			commandEncoder->release();
+			commandBuffer->release();
 
 			surface->present();
 		}
@@ -637,6 +609,6 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
-	logger.Error("Successfully exited.");
+	logger.Info("Successfully exited.");
 	return EXIT_SUCCESS;
 }

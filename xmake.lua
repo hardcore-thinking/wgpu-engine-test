@@ -80,7 +80,7 @@ target("wgpu-test")
     add_extrafiles("xmake.lua")
     add_extrafiles("resources/*")
 
-    set_configdir("$(buildir)/$(plat)/$(arch)/$(mode)/resources")
+    set_configdir("$(builddir)/$(plat)/$(arch)/$(mode)/resources")
     add_configfiles("resources/*")
 target_end()
 

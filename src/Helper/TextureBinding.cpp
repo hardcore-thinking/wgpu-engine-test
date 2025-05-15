@@ -2,7 +2,7 @@
 
 TextureBinding::TextureBinding(uint32_t textureBinding, TextureView& textureViewHandle) {	
 	binding = textureBinding;
-	textureView = (WGPUTextureView) &textureViewHandle;
+	textureView = textureViewHandle.Handle();
 }
 
 std::ostream& operator<<(std::ostream& out, TextureBinding const& bindGroupEntry) {

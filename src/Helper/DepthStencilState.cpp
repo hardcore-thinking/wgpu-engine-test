@@ -6,7 +6,7 @@ DepthStencilState::DepthStencilState() {
 	depthBiasSlopeScale = 0.0f;
     depthCompare = wgpu::CompareFunction::Less;
     depthWriteEnabled = wgpu::OptionalBool::True;
-    format = wgpu::TextureFormat::Depth24PlusStencil8;
+    format = wgpu::TextureFormat::Depth24Plus;
     nextInChain = nullptr;
     stencilFront = StencilFaceState {};
     stencilBack = StencilFaceState {};

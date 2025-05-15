@@ -51,53 +51,73 @@ void Adapter::DisplayFeatures() const {
 	for (int i = 0; i < _features.featureCount; ++i) {
 		wgpu::FeatureName feature = _features.features[i];
 		switch (feature) {
-		case wgpu::FeatureName::DepthClipControl:
-			std::cout << "\t\t- " << "wgpu::FeatureName::DepthClipControl (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::BGRA8UnormStorage:
+				std::cout << "\t\t- " << "wgpu::FeatureName::BGRA8UnormStorage (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::Depth32FloatStencil8:
-			std::cout << "\t\t- " << "wgpu::FeatureName::Depth32FloatStencil8 (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::ClipDistances:
+				std::cout << "\t\t- " << "wgpu::FeatureName::ClipDistances (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::TimestampQuery:
-			std::cout << "\t\t- " << "wgpu::FeatureName::TimestampQuery (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::Depth32FloatStencil8:
+				std::cout << "\t\t- " << "wgpu::FeatureName::Depth32FloatStencil8 (" << feature << ")" << std::endl;
+				break;
+		
+			case wgpu::FeatureName::DepthClipControl:
+				std::cout << "\t\t- " << "wgpu::FeatureName::DepthClipControl (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::TextureCompressionBC:
-			std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionBC (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::DualSourceBlending:
+				std::cout << "\t\t- " << "wgpu::FeatureName::DualSourceBlending (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::TextureCompressionETC2:
-			std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionETC2 (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::Float32Blendable:
+				std::cout << "\t\t- " << "wgpu::FeatureName::Float32Blendable (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::TextureCompressionASTC:
-			std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionASTC (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::Float32Filterable:
+				std::cout << "\t\t- " << "wgpu::FeatureName::Float32Filterable (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::IndirectFirstInstance:
-			std::cout << "\t\t- " << "wgpu::FeatureName::IndirectFirstInstance (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::IndirectFirstInstance:
+				std::cout << "\t\t- " << "wgpu::FeatureName::IndirectFirstInstance (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::ShaderF16:
-			std::cout << "\t\t- " << "wgpu::FeatureName::ShaderF16 (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::RG11B10UfloatRenderable:
+				std::cout << "\t\t- " << "wgpu::FeatureName::RG11B10UfloatRenderable (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::RG11B10UfloatRenderable:
-			std::cout << "\t\t- " << "wgpu::FeatureName::RG11B10UfloatRenderable (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::ShaderF16:
+				std::cout << "\t\t- " << "wgpu::FeatureName::ShaderF16 (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::BGRA8UnormStorage:
-			std::cout << "\t\t- " << "wgpu::FeatureName::BGRA8UnormStorage (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::TextureCompressionASTC:
+				std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionASTC (" << feature << ")" << std::endl;
+				break;
 
-		case wgpu::FeatureName::Float32Filterable:
-			std::cout << "\t\t- " << "wgpu::FeatureName::Float32Filterable (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::TextureCompressionASTCSliced3D:
+				std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionASTCSliced3D (" << feature << ")" << std::endl;
+				break;
+			
+			case wgpu::FeatureName::TextureCompressionBC:
+				std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionBC (" << feature << ")" << std::endl;
+				break;
 
-		default:
-			std::cout << "\t\t- " << "wgpu::FeatureName::Undefined (" << feature << ")" << std::endl;
-			break;
+			case wgpu::FeatureName::TextureCompressionBCSliced3D:
+				std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionBCSliced3D (" << feature << ")" << std::endl;
+				break;
+
+			case wgpu::FeatureName::TextureCompressionETC2:
+				std::cout << "\t\t- " << "wgpu::FeatureName::TextureCompressionETC2 (" << feature << ")" << std::endl;
+				break;
+
+			case wgpu::FeatureName::TimestampQuery:
+				std::cout << "\t\t- " << "wgpu::FeatureName::TimestampQuery (" << feature << ")" << std::endl;
+				break;
+
+			default:
+				std::cout << "\t\t- " << "wgpu::FeatureName::Undefined (" << feature << ")" << std::endl;
+				break;
 		}
 	}
 
@@ -109,16 +129,16 @@ void Adapter::DisplayInfos() const {
 
 	std::cout << "\t\t" << "Adapter type: ";
 	switch (_infos.adapterType) {
-		case WGPUAdapterType_DiscreteGPU:
+		case wgpu::AdapterType::CPU:
+			std::cout << "CPU" << std::endl;
+			break;
+
+		case wgpu::AdapterType::DiscreteGPU:
 			std::cout << "Discrete GPU" << std::endl;
 			break;
-
-		case WGPUAdapterType_IntegratedGPU:
+		
+		case wgpu::AdapterType::IntegratedGPU:
 			std::cout << "Integrated GPU" << std::endl;
-			break;
-
-		case WGPUAdapterType_CPU:
-			std::cout << "CPU" << std::endl;
 			break;
 
 		default:
@@ -126,39 +146,43 @@ void Adapter::DisplayInfos() const {
 			break;
 	};
 
-	std::cout << "\t\t" << "Architecture: " << _infos.architecture.data << std::endl;
+	//std::cout << "\t\t" << "Architecture: " << _infos.architecture.data << std::endl;
 	std::cout << "\t\t" << "Backend type: ";
 	switch (_infos.backendType) {
-		case WGPUBackendType_WebGPU:
-			std::cout << "WebGPU" << std::endl;
-			break;
-
-		case WGPUBackendType_D3D11:
+		case wgpu::BackendType::D3D11:
 			std::cout << "Direct3D 11" << std::endl;
 			break;
 
-		case WGPUBackendType_D3D12:
+		case wgpu::BackendType::D3D12:
 			std::cout << "Direct3D 12" << std::endl;
 			break;
 
-		case WGPUBackendType_Metal:
+		case wgpu::BackendType::Metal:
 			std::cout << "Metal" << std::endl;
 			break;
 
-		case WGPUBackendType_Vulkan:
-			std::cout << "Vulkan" << std::endl;
+		case wgpu::BackendType::Null:
+			std::cout << "Null" << std::endl;
 			break;
 
-		case WGPUBackendType_OpenGL:
+		case wgpu::BackendType::OpenGL:
 			std::cout << "OpenGL" << std::endl;
 			break;
 
-		case WGPUBackendType_OpenGLES:
+		case wgpu::BackendType::OpenGLES:
 			std::cout << "OpenGLES" << std::endl;
 			break;
 
+		case wgpu::BackendType::Vulkan:
+			std::cout << "Vulkan" << std::endl;
+			break;
+
+		case wgpu::BackendType::WebGPU:
+			std::cout << "WebGPU" << std::endl;
+			break;
+
 		default:
-			std::cout << "Unknown" << std::endl;
+			std::cout << "Undefined" << std::endl;
 			break;
 	}
 

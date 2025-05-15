@@ -12,7 +12,8 @@
 
 class Texture {
     public:
-        Texture() = default;;
+        Texture() = default;
+        Texture(wgpu::Texture const& texture);
         Texture(Device& device, TextureDescriptor const& descriptor);
         ~Texture();
 
@@ -20,7 +21,9 @@ class Texture {
         wgpu::Texture& Handle() { return _handle; }
         wgpu::Texture const& Handle() const { return _handle; }
 
-        wgpu::Texture* operator->();
+        Texture& operator = (wgpu::Texture const& texture);
+
+        wgpu::Texture* operator -> ();
 
     private:
         wgpu::Texture _handle = nullptr;

@@ -61,6 +61,10 @@ void Device::DisplayLimits() const {
 	std::cout << std::endl;
 }
 
-wgpu::Device* Device::operator->() {
+wgpu::Device* Device::operator -> () {
+	return &_handle;
+}
+
+wgpu::Device const* Device::operator -> () const {
 	return &_handle;
 }

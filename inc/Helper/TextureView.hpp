@@ -13,6 +13,7 @@
 class TextureView : public wgpu::TextureView {
     public:
         TextureView() = default;
+        TextureView(wgpu::TextureView const& textureView);
         TextureView(Texture& texture, TextureViewDescriptor const& descriptor);
         ~TextureView();
 
@@ -20,7 +21,9 @@ class TextureView : public wgpu::TextureView {
         wgpu::TextureView& Handle() { return _handle; }
         wgpu::TextureView const& Handle() const { return _handle; }
 
-        wgpu::TextureView* operator->();
+        TextureView& operator = (wgpu::TextureView const& textureView);
+
+        wgpu::TextureView* operator -> ();
 
     private:
         wgpu::TextureView _handle = nullptr;

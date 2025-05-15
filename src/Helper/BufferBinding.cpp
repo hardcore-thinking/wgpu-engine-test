@@ -2,7 +2,7 @@
 
 BufferBinding::BufferBinding(uint32_t bufferBinding, Buffer& bufferHandle, uint32_t bufferSize, uint32_t bufferOffset) {
 	binding = bufferBinding;
-	buffer = (WGPUBuffer)(&bufferHandle);
+	buffer = bufferHandle.Handle();
 	size = bufferSize;
 	offset = bufferOffset;
 }

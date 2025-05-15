@@ -9,6 +9,15 @@ Texture::Texture(Device& device, TextureDescriptor const& descriptor) {
     std::cout << "Texture created successfully: " << Handle() << std::endl;
 }
 
+Texture::Texture(wgpu::Texture const& texture) {
+    _handle = texture;
+    if (_handle == nullptr) {
+        throw std::runtime_error("Failed to create WGPU texture");
+    }
+    
+    std::cout << "Texture created successfully: " << Handle() << std::endl;
+}
+
 Texture::~Texture() {
     if (_handle != nullptr) {
         _handle.destroy();
@@ -19,6 +28,17 @@ Texture::~Texture() {
     }
 }
 
-wgpu::Texture* Texture::operator->() {
+Texture& Texture::operator = (wgpu::Texture const& texture) {
+    if (_handle != nullptr) {
+        _handle.destroy();
+        _handle.release();
+    }
+
+    _handle = texture;
+
+    return *this;
+}
+
+wgpu::Texture* Texture::operator -> () {
     return &_handle;
 }

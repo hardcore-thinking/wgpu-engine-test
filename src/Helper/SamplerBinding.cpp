@@ -2,7 +2,7 @@
 
 SamplerBinding::SamplerBinding(uint32_t samplerBinding, Sampler& samplerHandle) {
 	binding = samplerBinding;
-	sampler = (WGPUSampler)(&samplerHandle);
+	sampler = samplerHandle.Handle();
 }
 
 std::ostream& operator<<(std::ostream& out, SamplerBinding const& bindGroupEntry) {
