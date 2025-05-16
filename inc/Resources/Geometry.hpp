@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <cstring>
 
 #include <tiny_obj_loader.h>
 

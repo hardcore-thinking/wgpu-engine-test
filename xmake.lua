@@ -82,8 +82,8 @@ target("wgpu-test")
     add_extrafiles("xmake.lua")
     add_extrafiles("resources/*")
 
-    set_configdir("$(builddir)/$(plat)/$(arch)/$(mode)/resources")
-    add_configfiles("$(scriptdir)/resources/*")
+    set_rundir(".")
+    add_installfiles("resources/*")
 target_end()
 
 target("vector2-tests")

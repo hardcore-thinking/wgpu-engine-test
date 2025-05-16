@@ -9,6 +9,7 @@
 #include <memory>
 #include <cmath>
 #include <iomanip>
+#include <cstdint>
 
 #define WEBGPU_CPP_IMPLEMENTATION
 #include <wgpu-native/webgpu.hpp>
@@ -233,7 +234,7 @@ int main() {
 		BindGroupDescriptor bindGroupDescriptor(bindGroupLayouts[0], bindGroupEntries);
 		bindGroups.emplace_back(device, bindGroupDescriptor);
 
-		RenderPipeline renderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, vertexBufferLayouts);
+		RenderPipeline cubeRenderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, vertexBufferLayouts);
 	
 		Math::Vector3 cameraPosition(-300.0, -400.0, -300.0);
 		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);	
@@ -328,7 +329,7 @@ int main() {
 			RenderPassDescriptor renderPassDescriptor(renderPassColorAttachments, renderPassDepthStencilAttachment);
 			RenderPassEncoder renderPassEncoder(commandEncoder, renderPassDescriptor);
 
-			renderPassEncoder->setPipeline(renderPipeline.Handle());
+			renderPassEncoder->setPipeline(cubeRenderPipeline.Handle());
 			renderPassEncoder->setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
 			renderPassEncoder->setBindGroup(0, bindGroups[0].Handle(), 0, nullptr);
 			renderPassEncoder->draw(indexCount, 1, 0, 0);

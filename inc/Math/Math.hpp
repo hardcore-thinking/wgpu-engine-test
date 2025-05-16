@@ -2,6 +2,7 @@
 #define MATH_HPP
 
 #include <cmath>
+#include <cstdint>
 
 #include <Math/Matrix4x4.hpp>
 #include <Math/Vector2.hpp>
