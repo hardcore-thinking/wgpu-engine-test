@@ -118,7 +118,7 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 	return textureView;
 }
 
-static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, CompatibleSurface& surface, std::vector<BindGroupLayout>& bindGroupLayouts, std::vector<BindGroup>& bindGroups, std::vector<VertexBufferLayout> const& vertexBufferLayouts, std::vector<BindGroupLayoutEntry> const& bindGroupLayoutEntries, std::vector<BindGroupEntry> const& bindGroupEntries) {
+static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, CompatibleSurface& surface, std::vector<BindGroupLayout>& bindGroupLayouts, std::vector<VertexBufferLayout> const& vertexBufferLayouts) {
 	StencilFaceState stencilBackFaceState;
 	StencilFaceState stencilFrontFaceState;
 	wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
@@ -143,12 +143,6 @@ static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, Compa
 	ShaderModule fragmentShaderModule(device, "resources/shader.wgsl");
 	FragmentState fragmentState(wgpu::StringView("frag_main"), fragmentShaderModule, colorTargetStates, fragmentConstantEntries);
 	
-	BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
-	bindGroupLayouts.emplace_back(device, bindGroupLayoutDescriptor);
-
-	BindGroupDescriptor bindGroupDescriptor(bindGroupLayouts[0], bindGroupEntries);
-	bindGroups.emplace_back(device, bindGroupDescriptor);
-
 	PipelineLayoutDescriptor pipelineLayoutDescriptor(bindGroupLayouts);
 	PipelineLayout pipelineLayout(device, pipelineLayoutDescriptor);
 
@@ -233,7 +227,13 @@ int main() {
 		bindGroupEntries.push_back(TextureBinding(1, textureView));
 		bindGroupEntries.push_back(SamplerBinding(2, sampler));
 
-		RenderPipeline renderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, bindGroups, vertexBufferLayouts, bindGroupLayoutEntries, bindGroupEntries);
+		BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
+		bindGroupLayouts.emplace_back(device, bindGroupLayoutDescriptor);
+
+		BindGroupDescriptor bindGroupDescriptor(bindGroupLayouts[0], bindGroupEntries);
+		bindGroups.emplace_back(device, bindGroupDescriptor);
+
+		RenderPipeline renderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, vertexBufferLayouts);
 	
 		Math::Vector3 cameraPosition(-300.0, -400.0, -300.0);
 		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);	
