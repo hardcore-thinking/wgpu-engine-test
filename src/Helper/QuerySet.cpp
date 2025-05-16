@@ -3,7 +3,7 @@
 QuerySet::QuerySet() {
     _handle = nullptr;
 
-    std::cout << "Query set created successfully: " << Handle() << std::endl;
+    //std::cout << "Query set created successfully: " << Handle() << std::endl;
 }
 
 QuerySet::QuerySet(Device& device, QuerySetDescriptor const& descriptor) {
@@ -12,7 +12,7 @@ QuerySet::QuerySet(Device& device, QuerySetDescriptor const& descriptor) {
         throw std::runtime_error("Failed to create query set");
     }
 
-    std::cout << "Query set created successfully: " << Handle() << std::endl;
+    //std::cout << "Query set created successfully: " << Handle() << std::endl;
 }
 
 QuerySet::~QuerySet() {
@@ -22,5 +22,5 @@ QuerySet::~QuerySet() {
         _handle = nullptr;
     }
 
-    std::cout << "Query set destroyed successfully" << std::endl;
+    //std::cout << "Query set destroyed successfully" << std::endl;
 }

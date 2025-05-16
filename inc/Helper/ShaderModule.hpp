@@ -21,7 +21,8 @@ class ShaderModule {
         wgpu::ShaderModule& Handle() { return _handle; }
         wgpu::ShaderModule const& Handle() const { return _handle; }
 
-        wgpu::ShaderModule* operator->();
+        wgpu::ShaderModule* operator -> ();
+        wgpu::ShaderModule const* operator -> () const;
 
     private:
         wgpu::ShaderModule _handle = nullptr;

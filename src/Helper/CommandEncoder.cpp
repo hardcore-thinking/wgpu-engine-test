@@ -6,7 +6,7 @@ CommandEncoder::CommandEncoder(Device& device, CommandEncoderDescriptor const& d
         throw std::runtime_error("Failed to create a command encoder");
     }
 
-    std::cout << "Command encoder created successfully " << Handle() << std::endl;
+    //std::cout << "Command encoder created successfully " << Handle() << std::endl;
 }
 
 CommandEncoder::~CommandEncoder() {

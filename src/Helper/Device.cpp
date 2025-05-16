@@ -8,7 +8,7 @@ Device::Device(Adapter& adapter, DeviceDescriptor const& descriptor) {
 		throw std::runtime_error("Failed to create WGPU device");
 	}
 
-	std::cout << "Device created successfully: " << Handle() << std::endl;
+	//std::cout << "Device created successfully: " << Handle() << std::endl;
 
 	_handle.getLimits(&_limits);
 }
@@ -19,7 +19,7 @@ Device::~Device() {
 		_handle = nullptr;
 	}
 
-	std::cout << "Device destroyed successfully" << std::endl;
+	//std::cout << "Device destroyed successfully" << std::endl;
 }
 
 void Device::DisplayLimits() const {

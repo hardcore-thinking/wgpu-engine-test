@@ -6,7 +6,7 @@ BindGroup::BindGroup(Device& device, BindGroupDescriptor& bindGroupDescriptor) {
         throw std::runtime_error("Failed to create bind group.");
     }
 
-    std::cout << "Bind group created successfully: " << Handle() << std::endl;
+    //std::cout << "Bind group created successfully: " << Handle() << std::endl;
 }
 
 BindGroup::~BindGroup() {
@@ -15,7 +15,7 @@ BindGroup::~BindGroup() {
         _handle = nullptr;
     }
 
-    std::cout << "Bind group destroyed successfully" << std::endl;
+    //std::cout << "Bind group destroyed successfully" << std::endl;
 }
 
 wgpu::BindGroup* BindGroup::operator->() {

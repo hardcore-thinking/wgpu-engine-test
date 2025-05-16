@@ -2,6 +2,7 @@ add_rules("mode.debug", "mode.release", "mode.coverage")
 set_warnings("all", "error")
 set_languages("cxx17")
 set_optimize("fastest")
+add_cxxflags("/Z7")
 
 package("wgpu-native-cpp")
     set_homepage("https://github.com/eliemichel/WebGPU-Cpp.git")

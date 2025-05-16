@@ -13,7 +13,7 @@ Adapter::Adapter(Instance& instance, Window const& window, Surface& surface) {
         throw std::runtime_error("Failed to create WGPU adapter");
     }
 
-    std::cout << "Adapter created successfully: " << Handle() << std::endl;
+    //std::cout << "Adapter created successfully: " << Handle() << std::endl;
 
     _handle.getFeatures(&_features);
     _handle.getInfo(&_infos);
@@ -26,7 +26,7 @@ Adapter::Adapter(Instance& instance, Window const& window, wgpu::RequestAdapterO
         throw std::runtime_error("Failed to create WGPU adapter");
     }
 
-    std::cout << "Adapter created successfully: " << Handle() << std::endl;
+    //std::cout << "Adapter created successfully: " << Handle() << std::endl;
 
     _handle.getFeatures(&_features);
     _handle.getInfo(&_infos);
@@ -39,7 +39,7 @@ Adapter::~Adapter() {
         _handle = nullptr;
     }
 
-    std::cout << "Adapter destroyed successfully" << std::endl;
+    //std::cout << "Adapter destroyed successfully" << std::endl;
 }
 
 wgpu::Adapter* Adapter::operator->() {

@@ -10,7 +10,7 @@ Surface::Surface(Instance const& instance) {
         throw std::runtime_error("Failed to create WGPU surface");
     }
     
-    std::cout << "Surface created successfully: " << Handle() << std::endl;
+    //std::cout << "Surface created successfully: " << Handle() << std::endl;
 }
 
 Surface::Surface(Instance const& instance, wgpu::SurfaceDescriptor const& descriptor) {
@@ -19,7 +19,7 @@ Surface::Surface(Instance const& instance, wgpu::SurfaceDescriptor const& descri
         throw std::runtime_error("Failed to create WGPU surface");
     }
     
-    std::cout << "Surface created successfully: " << Handle() << std::endl;
+    //std::cout << "Surface created successfully: " << Handle() << std::endl;
 }
 
 Surface::~Surface() {

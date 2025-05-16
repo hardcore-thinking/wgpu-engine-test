@@ -24,6 +24,7 @@ class TextureView : public wgpu::TextureView {
         TextureView& operator = (wgpu::TextureView const& textureView);
 
         wgpu::TextureView* operator -> ();
+        wgpu::TextureView const* operator -> () const;
 
     private:
         wgpu::TextureView _handle = nullptr;

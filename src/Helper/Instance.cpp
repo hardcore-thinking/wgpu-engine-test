@@ -12,7 +12,7 @@ Instance::Instance() {
         throw std::runtime_error("Failed to create WGPU instance");
     }
 
-    std::cout << "Instance created successfully: " << Handle() << std::endl;
+    //std::cout << "Instance created successfully: " << Handle() << std::endl;
 }
 
 Instance::Instance(wgpu::InstanceDescriptor const& descriptor) {
@@ -21,7 +21,7 @@ Instance::Instance(wgpu::InstanceDescriptor const& descriptor) {
         throw std::runtime_error("Failed to create WGPU instance");
     }
 
-    std::cout << "Instance created successfully: " << Handle() << std::endl;
+    //std::cout << "Instance created successfully: " << Handle() << std::endl;
 }
 
 Instance::~Instance() {
@@ -30,7 +30,7 @@ Instance::~Instance() {
         _handle = nullptr;
     }
 
-    std::cout << "Instance destroyed successfully" << std::endl;
+    //std::cout << "Instance destroyed successfully" << std::endl;
 }
 
 wgpu::Instance* Instance::operator->() {

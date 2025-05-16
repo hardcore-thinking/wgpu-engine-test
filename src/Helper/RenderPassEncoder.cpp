@@ -6,7 +6,7 @@ RenderPassEncoder::RenderPassEncoder(CommandEncoder& commandEncoder, RenderPassD
         throw std::runtime_error("Failed to create render pass encoder");
     }
 
-    std::cout << "Render pass encoder created successfully: " << Handle() << std::endl;
+    //std::cout << "Render pass encoder created successfully: " << Handle() << std::endl;
 }
 
 RenderPassEncoder::~RenderPassEncoder() {

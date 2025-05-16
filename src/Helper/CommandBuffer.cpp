@@ -6,11 +6,11 @@ CommandBuffer::CommandBuffer(CommandEncoder& commandEncoder) {
         throw std::runtime_error("Failed to create command buffer");
     }
 
-    std::cout << "Command buffer created successfully: " << Handle() << std::endl;
+    //std::cout << "Command buffer created successfully: " << Handle() << std::endl;
 }
 
 CommandBuffer::~CommandBuffer() {
-    if (_handle) {
+    if (_handle != nullptr) {
         _handle.release();
         _handle = nullptr;
     }

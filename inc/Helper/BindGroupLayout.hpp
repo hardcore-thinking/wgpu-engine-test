@@ -20,7 +20,8 @@ class BindGroupLayout {
         wgpu::BindGroupLayout& Handle() { return _handle; }
         wgpu::BindGroupLayout const& Handle() const { return _handle; }
 
-        wgpu::BindGroupLayout* operator->();
+        wgpu::BindGroupLayout* operator -> ();
+        wgpu::BindGroupLayout const* operator -> () const;
 
     private:
         wgpu::BindGroupLayout _handle = nullptr;

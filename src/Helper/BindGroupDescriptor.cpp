@@ -17,6 +17,8 @@ BindGroupDescriptor::BindGroupDescriptor(BindGroupLayout& bindGroupLayout, std::
         else if (entry.sampler) {
             std::cout << "  sampler: " << entry.sampler << std::endl;
         }
+
+        std::cout << std::endl;
     }
 
     layout = bindGroupLayout.Handle();

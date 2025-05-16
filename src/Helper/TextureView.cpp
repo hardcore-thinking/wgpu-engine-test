@@ -6,7 +6,7 @@ TextureView::TextureView(Texture& texture, TextureViewDescriptor const& descript
         throw std::runtime_error("Failed to create WGPU texture view");
     }
     
-    std::cout << "Texture view created successfully: " << Handle() << std::endl;
+    //std::cout << "Texture view created successfully: " << Handle() << std::endl;
 }
 
 TextureView::TextureView(wgpu::TextureView const& textureView) {
@@ -15,7 +15,7 @@ TextureView::TextureView(wgpu::TextureView const& textureView) {
         throw std::runtime_error("Failed to create WGPU texture view");
     }
     
-    std::cout << "Texture view created successfully: " << Handle() << std::endl;
+    //std::cout << "Texture view created successfully: " << Handle() << std::endl;
 }
 
 TextureView::~TextureView() {
@@ -24,7 +24,7 @@ TextureView::~TextureView() {
         _handle = nullptr;
     }
 
-    std::cout << "Texture view released successfully" << std::endl;
+    //std::cout << "Texture view released successfully" << std::endl;
 }
 
 TextureView& TextureView::operator = (wgpu::TextureView const& textureView) {
@@ -41,5 +41,9 @@ TextureView& TextureView::operator = (wgpu::TextureView const& textureView) {
 }
 
 wgpu::TextureView* TextureView::operator->() {
+    return &_handle;
+}
+
+wgpu::TextureView const* TextureView::operator->() const {
     return &_handle;
 }

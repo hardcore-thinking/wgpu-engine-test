@@ -6,7 +6,7 @@ PipelineLayout::PipelineLayout(Device& device, PipelineLayoutDescriptor const& p
         throw std::runtime_error("Failed to create pipeline layout");
     }
 
-    std::cout << "PipelineLayout created: " << Handle() << std::endl;
+    //std::cout << "PipelineLayout created: " << Handle() << std::endl;
 }
 
 PipelineLayout::~PipelineLayout() {
@@ -15,7 +15,7 @@ PipelineLayout::~PipelineLayout() {
         _handle = nullptr;
     }
 
-    std::cout << "PipelineLayout destroyed" << std::endl;
+    //std::cout << "PipelineLayout destroyed" << std::endl;
 }
 
 wgpu::PipelineLayout* PipelineLayout::operator->() {

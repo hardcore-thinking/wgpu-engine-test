@@ -7,7 +7,7 @@ Window::Window() {
         throw std::runtime_error("Failed to create SDL window");
     }
 
-    std::cout << "Window created successfully: <SDL_Window " << _handle << ">" << std::endl;
+    //std::cout << "Window created successfully: <SDL_Window " << _handle << ">" << std::endl;
 }
 
 Window::Window(WindowCreationInfo const& info) {
@@ -16,7 +16,7 @@ Window::Window(WindowCreationInfo const& info) {
         throw std::runtime_error("Failed to create SDL window");
     }
 
-    std::cout << "Window created successfully: <SDL_Window " << _handle << ">" << std::endl;
+    //std::cout << "Window created successfully: <SDL_Window " << _handle << ">" << std::endl;
 }
 
 SDL_DisplayMode Window::DisplayMode() {
@@ -31,5 +31,5 @@ Window::~Window() {
         _handle = nullptr;
     }
 
-    std::cout << "Window destroyed successfully" << std::endl;
+    //std::cout << "Window destroyed successfully" << std::endl;
 }

@@ -6,7 +6,7 @@ RenderPipeline::RenderPipeline(Device& device,RenderPipelineDescriptor const& re
 		throw std::runtime_error("Failed to create render pipeline");
 	}
 
-	std::cout << "Render pipeline created successfully: " << Handle() << std::endl;
+	//std::cout << "Render pipeline created successfully: " << Handle() << std::endl;
 }
 
 RenderPipeline::~RenderPipeline() {
@@ -15,7 +15,7 @@ RenderPipeline::~RenderPipeline() {
 		_handle = nullptr;
 	}
 
-	std::cout << "Render pipeline released successfully" << std::endl;
+	//std::cout << "Render pipeline released successfully" << std::endl;
 }
 
 wgpu::RenderPipeline* RenderPipeline::operator->() {

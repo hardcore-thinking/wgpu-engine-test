@@ -6,7 +6,7 @@ BindGroupLayout::BindGroupLayout(Device& device, BindGroupLayoutDescriptor const
         throw std::runtime_error("Failed to create bind group layout");
     }
 
-    std::cout << "BindGroupLayout created successfully: " << Handle() << std::endl;
+    //std::cout << "BindGroupLayout created successfully: " << Handle() << std::endl;
 }
 
 BindGroupLayout::~BindGroupLayout() {
@@ -15,9 +15,13 @@ BindGroupLayout::~BindGroupLayout() {
         _handle = nullptr;
     }
 
-    std::cout << "BindGroupLayout destroyed successfully" << std::endl;
+    //std::cout << "BindGroupLayout destroyed successfully" << std::endl;
 }
 
-wgpu::BindGroupLayout* BindGroupLayout::operator->() {
+wgpu::BindGroupLayout* BindGroupLayout::operator -> () {
+    return &_handle;
+}
+
+wgpu::BindGroupLayout const* BindGroupLayout::operator -> () const {
     return &_handle;
 }

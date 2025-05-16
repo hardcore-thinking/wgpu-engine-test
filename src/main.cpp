@@ -8,6 +8,7 @@
 #include <format>
 #include <memory>
 #include <cmath>
+#include <iomanip>
 
 #define WEBGPU_CPP_IMPLEMENTATION
 #include <wgpu-native/webgpu.hpp>
@@ -212,13 +213,9 @@ int main() {
 			return EXIT_FAILURE;
 		}
 
-		logger.Info("Geometry loaded successfully.");
-
 		TextureView textureView;
-		Texture texture = LoadTexture("resources/de-geulasse.png", device.Handle(), &textureView.Handle());
+		Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
 
-		logger.Info("Texture loaded successfully.");
-		
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
 		Sampler sampler(device, samplerDescriptor);
 
@@ -237,35 +234,48 @@ int main() {
 		bindGroupEntries.push_back(SamplerBinding(2, sampler));
 
 		RenderPipeline renderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, bindGroups, vertexBufferLayouts, bindGroupLayoutEntries, bindGroupEntries);
-
-		MyUniforms uniforms {};
 	
 		Math::Vector3 cameraPosition(-300.0, -400.0, -300.0);
-		uniforms.cameraPosition = cameraPosition;
-
-		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);
-		uniforms.modelMatrix = Math::Matrix4x4::Transpose(S);
-	
+		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);	
 		Math::Matrix4x4 L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3( 0.0f,  0.0f, 0.0f), Math::Vector3( 0.0f,  0.0f, 1.0f));
-		uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
 
 		float ratio = windowWidth / windowHeight;
 		float vfov = 45.0f * PI / 180.0f;
 		float near = 0.01f;
 		float far = 1000.0f;
 		Math::Matrix4x4 P = Math::Matrix4x4::Perspective(vfov, ratio, near, far);
-		uniforms.projectionMatrix = Math::Matrix4x4::Transpose(P);
 
-		uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
-		uniforms.time = 1.0f;
+		MyUniforms uniforms = {
+			.projectionMatrix = Math::Matrix4x4::Transpose(P),
+			.viewMatrix = Math::Matrix4x4::Transpose(L),
+			.modelMatrix = Math::Matrix4x4::Transpose(S),
+			.color = { 0.0f, 1.0f, 0.4f, 1.0f },
+			.cameraPosition = cameraPosition,
+			.time = 1.0f
+		};
 
 		queue->writeBuffer(uniformBuffer.Handle(), 0, &uniforms, sizeof(MyUniforms));
 
 		Uint8 const* keyboard = SDL_GetKeyboardState(nullptr);
 
 		running = true;
+		uint64_t frameCount = 0;
+		bool moveCamera = true;
+
+		struct SpaceTimer {
+			Uint64 lastSpaceTime = 0;
+			Uint64 pauseTimeSum = 0;
+		} spaceTimer;
+
 		SDL_Event event {};
 		while (running) {
+			static Uint64 currentTime = 0ULL;
+
+			currentTime = SDL_GetTicks64();
+
+			std::cout << std::endl << "[" << std::setw(20) << frameCount++ << "]" << std::endl;
+			std::cout << "moveCamera: " << std::boolalpha << moveCamera << std::endl;
+
 			if (SDL_PollEvent(&event) > 0) {
 				if (event.type == SDL_QUIT) {
 					running = false;
@@ -278,22 +288,30 @@ int main() {
 				if (keyboard[SDL_SCANCODE_S]) {
 					cameraPosition.y -= 0.01f;
 				}
-			}
 
+				if (keyboard[SDL_SCANCODE_SPACE] && (currentTime - spaceTimer.lastSpaceTime) > 100) {
+					moveCamera = !moveCamera;
+					
+					if (moveCamera) {
+						spaceTimer.pauseTimeSum += currentTime - spaceTimer.lastSpaceTime;
+					}
+					
+					spaceTimer.lastSpaceTime = currentTime;
+				}
+			}
+			
 			TextureView textureView = GetNextTexture(device.Handle(), surface.Handle());
 
-			uniforms.time = -static_cast<float>(SDL_GetTicks()) / 1000;
+			uniforms.time = -static_cast<float>(currentTime - spaceTimer.pauseTimeSum) / 1000;
 			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));
 
-			cameraPosition = Math::Vector3(-300.0f * std::cos(uniforms.time), -400.0f, -300.0f * std::sin(uniforms.time));
-			uniforms.cameraPosition = cameraPosition;
-
-			//std::cout << "cameraPosition: " << cameraPosition << std::endl;
-
-			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, cameraPosition), &uniforms.cameraPosition, sizeof(MyUniforms::cameraPosition));
+			if (moveCamera) {
+				cameraPosition = Math::Vector3(-300.0f * std::cos(uniforms.time), -400.0f, -300.0f * std::sin(uniforms.time));
+				uniforms.cameraPosition = cameraPosition;
+				queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, cameraPosition), &uniforms.cameraPosition, sizeof(MyUniforms::cameraPosition));
+			}
 
 			L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 0.0f, 1.0f));
-
 			uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
 			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
 
@@ -321,10 +339,6 @@ int main() {
 			CommandBuffer commandBuffer(commandEncoder);
 		
 			queue->submit(commandBuffer.Handle());
-
-			renderPassEncoder->release();
-			commandEncoder->release();
-			commandBuffer->release();
 
 			surface->present();
 		}

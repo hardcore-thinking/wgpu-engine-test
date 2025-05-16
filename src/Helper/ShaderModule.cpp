@@ -27,7 +27,7 @@ ShaderModule::ShaderModule(Device& device, std::filesystem::path const& path) {
         throw std::runtime_error("Failed to create shader module from " + path.string());
     }
 
-    std::cout << "Shader module created: " << Handle() << std::endl;
+    //std::cout << "Shader module created: " << Handle() << std::endl;
 }
 
 ShaderModule::~ShaderModule() {
@@ -36,9 +36,13 @@ ShaderModule::~ShaderModule() {
 		_handle = nullptr;
 	}
 
-	std::cout << "Shader module destroyed" << std::endl;
+	//std::cout << "Shader module destroyed" << std::endl;
 }
 
 wgpu::ShaderModule* ShaderModule::operator->() {
+	return &_handle;
+}
+
+wgpu::ShaderModule const* ShaderModule::operator->() const {
 	return &_handle;
 }

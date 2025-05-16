@@ -24,7 +24,8 @@ class Texture {
         Texture& operator = (wgpu::Texture const& texture);
 
         wgpu::Texture* operator -> ();
-
+        wgpu::Texture const* operator -> () const;
+        
     private:
         wgpu::Texture _handle = nullptr;
 };

@@ -6,7 +6,7 @@ Sampler::Sampler(Device& device, SamplerDescriptor const& samplerDescriptor) {
         throw std::runtime_error("Failed to create sampler.");
     }
 
-    std::cout << "Created sampler successfully: " << Handle() << std::endl;
+    //std::cout << "Created sampler successfully: " << Handle() << std::endl;
 }
 
 Sampler::~Sampler() {
@@ -15,5 +15,5 @@ Sampler::~Sampler() {
         _handle = nullptr;
     }
 
-    std::cout << "Destroyed sampler successfully" << std::endl;
+    //std::cout << "Destroyed sampler successfully" << std::endl;
 }

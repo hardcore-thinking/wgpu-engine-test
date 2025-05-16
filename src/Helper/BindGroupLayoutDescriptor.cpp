@@ -19,6 +19,8 @@ BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(std::vector<BindGroupLayout
         else if (entry.sampler.type != wgpu::SamplerBindingType::BindingNotUsed) {
             std::cout << "  sampler.type: " << entry.sampler.type << std::endl;
         }
+
+        std::cout << std::endl;
     }
 
     entryCount = static_cast<uint32_t>(bindGroupLayoutEntries.size());

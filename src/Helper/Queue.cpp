@@ -6,7 +6,7 @@ Queue::Queue(Device const& device) {
         throw std::runtime_error("Failed to get queue");
     }
 
-    std::cout << "Queue created successfully: " << Handle() << std::endl;
+    //std::cout << "Queue created successfully: " << Handle() << std::endl;
 }
 
 Queue::~Queue() {
@@ -15,7 +15,7 @@ Queue::~Queue() {
         _handle = nullptr;
     }
 
-    std::cout << "Queue destroyed successfully" << std::endl;
+    //std::cout << "Queue destroyed successfully" << std::endl;
 }
 
 wgpu::Queue* Queue::operator-> () {
