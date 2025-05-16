@@ -24,7 +24,7 @@ jobs:
             "- Branch: ${{ github.ref }}"
             
       - name: Install dependencies
-        run: "sudo apt install curl libx11-dev & curl -fsSL https://xmake.io/shget.text | bash"
+        run: "sudo apt install curl libx11-dev unzip & curl -fsSL https://xmake.io/shget.text | bash"
       
       - name: Clone repository
         uses: actions/checkout@v4
