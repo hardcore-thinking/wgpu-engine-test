@@ -76,6 +76,9 @@ namespace Math {
             Vector4 Column(size_t m) const;
 
         private:
+            static Matrix4x4 GaussJordan(Matrix4x4 const& m);
+
+        private:
             std::array<float, 16> _elements {};
     };
 }

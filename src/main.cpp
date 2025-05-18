@@ -119,42 +119,10 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 	return textureView;
 }
 
-static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, CompatibleSurface& surface, std::vector<BindGroupLayout>& bindGroupLayouts, std::vector<VertexBufferLayout> const& vertexBufferLayouts) {
-	StencilFaceState stencilBackFaceState;
-	StencilFaceState stencilFrontFaceState;
-	wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
-	DepthStencilState depthStencilState(stencilFrontFaceState, stencilBackFaceState, depthTextureFormat);
-
-	PrimitiveState primitiveState;
-	primitiveState.cullMode = wgpu::CullMode::None; // for debug purposes
-
-	MultisampleState multisampleState;
-
-	std::vector<ConstantEntry> vertexConstantEntries {};
-	ShaderModule vertexShaderModule(device, "resources/shader.wgsl");
-	VertexState vertexState(wgpu::StringView("vert_main"), vertexShaderModule, vertexBufferLayouts, vertexConstantEntries);
-	
-	BlendComponent colorComponent(wgpu::BlendFactor::SrcAlpha, wgpu::BlendFactor::OneMinusSrcAlpha, wgpu::BlendOperation::Add);
-	BlendComponent alphaComponent(wgpu::BlendFactor::Zero, wgpu::BlendFactor::One, wgpu::BlendOperation::Add);
-	BlendState blendState(colorComponent, alphaComponent);
-	std::vector<ColorTargetState> colorTargetStates {};
-	ColorTargetState colorTargetState(adapter, surface, blendState);
-	colorTargetStates.push_back(colorTargetState);
-	std::vector<ConstantEntry> fragmentConstantEntries {};
-	ShaderModule fragmentShaderModule(device, "resources/shader.wgsl");
-	FragmentState fragmentState(wgpu::StringView("frag_main"), fragmentShaderModule, colorTargetStates, fragmentConstantEntries);
-	
-	PipelineLayoutDescriptor pipelineLayoutDescriptor(bindGroupLayouts);
-	PipelineLayout pipelineLayout(device, pipelineLayoutDescriptor);
-
-	RenderPipelineDescriptor renderPipelineDescriptor(depthStencilState, primitiveState, multisampleState, vertexState, fragmentState, pipelineLayout);
-	RenderPipeline renderPipeline(device, renderPipelineDescriptor);
-
-	return renderPipeline;
-}
-
 int main() {
+	/*
 	try {
+		// MARK: Main instances
 		Instance instance;
 		Window window;
 		CompatibleSurface surface(instance, window);
@@ -166,27 +134,17 @@ int main() {
 
 		DeviceLostCallbackInfo deviceLostCallbackInfo(DeviceLostCallback, nullptr, nullptr);
 		UncapturedErrorCallbackInfo uncapturedErrorCallbackInfo(UncapturedErrorCallback, nullptr, nullptr);
-
 		DeviceDescriptor deviceDescriptor(adapter, limits, deviceLostCallbackInfo, uncapturedErrorCallbackInfo);
-
 		Device device(adapter, deviceDescriptor);
 		Queue queue(device);
 
 		surface.Configure(adapter, device, window);
 
-		wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
-
-		std::vector<wgpu::TextureFormat> viewFormats { depthTextureFormat };
-		TextureDescriptor depthTextureDescriptor(depthTextureFormat, wgpu::TextureUsage::RenderAttachment, { static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1 }, viewFormats);
-		Texture depthTexture(device, depthTextureDescriptor);
-	
-		TextureViewDescriptor depthTextureViewDescriptor(wgpu::TextureAspect::DepthOnly, depthTextureFormat);
-		TextureView depthTextureView(depthTexture, depthTextureViewDescriptor);
-
+		std::vector<VertexAttributes> vertexData {};
 		std::vector<BindGroupLayout> bindGroupLayouts {};
 		std::vector<BindGroup> bindGroups {};
-		std::vector<VertexAttributes> vertexData {};
 
+		// MARK: Vertex buffer layout
 		std::vector<VertexAttribute> vertexAttributes;
 		vertexAttributes.push_back(VertexAttribute(0, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, position)));
 		vertexAttributes.push_back(VertexAttribute(1, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, normal)));
@@ -197,45 +155,89 @@ int main() {
 		VertexBufferLayout vertexBufferLayout(sizeof(VertexAttributes), vertexAttributes);
 		vertexBufferLayouts.push_back(vertexBufferLayout);
 
+		// MARK: Cube binding layouts
 		std::vector<BindGroupLayoutEntry> bindGroupLayoutEntries {};
 		bindGroupLayoutEntries.push_back(BufferBindingLayout(0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, wgpu::BufferBindingType::Uniform, sizeof(MyUniforms)));
 		bindGroupLayoutEntries.push_back(TextureBindingLayout(1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float));
 		bindGroupLayoutEntries.push_back(SamplerBindingLayout(2, wgpu::ShaderStage::Fragment, wgpu::SamplerBindingType::Filtering));
 
+		BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
+		bindGroupLayouts.emplace_back(device, bindGroupLayoutDescriptor);
+
+		// MARK: Cube geometry
 		bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
 		if (!success) {
 			logger.Error("Failed to load geometry.");
 			return EXIT_FAILURE;
 		}
 
-		TextureView textureView;
-		Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
-
-		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
-		Sampler sampler(device, samplerDescriptor);
-
-		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
-		Buffer uniformBuffer(device, uniformBufferDescriptor);
-
+		// MARK: Cube vertex buffer
 		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, "vertex_buffer");
 		Buffer vertexBuffer(device, vertexBufferDescriptor);
 
 		queue->writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
 		int indexCount = static_cast<int>(vertexData.size());
+
+		// MARK: Cube binding handles
+		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
+		Buffer uniformBuffer(device, uniformBufferDescriptor);
+
+		TextureView textureView;
+		Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
+
+		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
+		Sampler sampler(device, samplerDescriptor);
  
+		// MARK: Cube bindings array
 		std::vector<BindGroupEntry> bindGroupEntries {};
 		bindGroupEntries.push_back(BufferBinding(0, uniformBuffer, sizeof(MyUniforms), 0));
 		bindGroupEntries.push_back(TextureBinding(1, textureView));
 		bindGroupEntries.push_back(SamplerBinding(2, sampler));
 
-		BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
-		bindGroupLayouts.emplace_back(device, bindGroupLayoutDescriptor);
-
 		BindGroupDescriptor bindGroupDescriptor(bindGroupLayouts[0], bindGroupEntries);
 		bindGroups.emplace_back(device, bindGroupDescriptor);
 
-		RenderPipeline cubeRenderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, vertexBufferLayouts);
+		// MARK: Cube depth texture
+		wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
+
+		std::vector<wgpu::TextureFormat> viewFormats { depthTextureFormat };
+		TextureDescriptor depthTextureDescriptor(depthTextureFormat, wgpu::TextureUsage::RenderAttachment, { static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1 }, viewFormats);
+		Texture depthTexture(device, depthTextureDescriptor);
 	
+		TextureViewDescriptor depthTextureViewDescriptor(wgpu::TextureAspect::DepthOnly, depthTextureFormat);
+		TextureView depthTextureView(depthTexture, depthTextureViewDescriptor);
+
+		// MARK: Cube ender pipeline
+		StencilFaceState stencilBackFaceState;
+		StencilFaceState stencilFrontFaceState;
+		DepthStencilState depthStencilState(stencilFrontFaceState, stencilBackFaceState, depthTextureFormat);
+
+		PrimitiveState primitiveState;
+		primitiveState.cullMode = wgpu::CullMode::None; // for debug purposes
+
+		MultisampleState multisampleState;
+
+		std::vector<ConstantEntry> vertexConstantEntries {};
+		ShaderModule vertexShaderModule(device, "resources/cube.wgsl");
+		VertexState vertexState(wgpu::StringView("vert_main"), vertexShaderModule, vertexBufferLayouts, vertexConstantEntries);
+	
+		BlendComponent colorComponent(wgpu::BlendFactor::SrcAlpha, wgpu::BlendFactor::OneMinusSrcAlpha, wgpu::BlendOperation::Add);
+		BlendComponent alphaComponent(wgpu::BlendFactor::Zero, wgpu::BlendFactor::One, wgpu::BlendOperation::Add);
+		BlendState blendState(colorComponent, alphaComponent);
+		std::vector<ColorTargetState> colorTargetStates {};
+		ColorTargetState colorTargetState(adapter, surface, blendState);
+		colorTargetStates.push_back(colorTargetState);
+		std::vector<ConstantEntry> fragmentConstantEntries {};
+		ShaderModule fragmentShaderModule(device, "resources/cube.wgsl");
+		FragmentState fragmentState(wgpu::StringView("frag_main"), fragmentShaderModule, colorTargetStates, fragmentConstantEntries);
+	
+		PipelineLayoutDescriptor pipelineLayoutDescriptor(bindGroupLayouts);
+		PipelineLayout pipelineLayout(device, pipelineLayoutDescriptor);
+
+		RenderPipelineDescriptor cubeRenderPipelineDescriptor(depthStencilState, primitiveState, multisampleState, vertexState, fragmentState, pipelineLayout);
+		RenderPipeline cubeRenderPipeline(device, cubeRenderPipelineDescriptor);
+	
+		// MARK: Uniforms initialization
 		Math::Vector3 cameraPosition(-300.0, -400.0, -300.0);
 		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);	
 		Math::Matrix4x4 L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3( 0.0f,  0.0f, 0.0f), Math::Vector3( 0.0f,  0.0f, 1.0f));
@@ -268,6 +270,7 @@ int main() {
 			Uint64 pauseTimeSum = 0;
 		} spaceTimer;
 
+		// MARK: Main loop
 		SDL_Event event {};
 		while (running) {
 			static Uint64 currentTime = 0ULL;
@@ -277,6 +280,7 @@ int main() {
 			std::cout << std::endl << "[" << std::setw(20) << frameCount++ << "]" << std::endl;
 			std::cout << "moveCamera: " << std::boolalpha << moveCamera << std::endl;
 
+			// MARK: Events handling
 			if (SDL_PollEvent(&event) > 0) {
 				if (event.type == SDL_QUIT) {
 					running = false;
@@ -300,7 +304,8 @@ int main() {
 					spaceTimer.lastSpaceTime = currentTime;
 				}
 			}
-			
+
+			// MARK: Update	
 			TextureView textureView = GetNextTexture(device.Handle(), surface.Handle());
 
 			uniforms.time = -static_cast<float>(currentTime - spaceTimer.pauseTimeSum) / 1000;
@@ -316,6 +321,7 @@ int main() {
 			uniforms.viewMatrix = Math::Matrix4x4::Transpose(L);
 			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, viewMatrix), &uniforms.viewMatrix, sizeof(MyUniforms::viewMatrix));
 
+			// MARK: Render
 			CommandEncoderDescriptor commandEncoderDescriptor;
 			CommandEncoder commandEncoder(device, commandEncoderDescriptor);
 
@@ -349,7 +355,16 @@ int main() {
 		std::cerr << "Exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
+	*/
 
-	logger.Info("Successfully exited.");
+	Math::Matrix4x4 m1(
+		5.0f, 3.0f, 5.0f, 0.0f,
+		9.0f, 4.0f, 7.0f, 4.0f,
+		8.0f, 8.0f, 0.0f, 3.0f,
+		5.0f, 4.0f, 8.0f, 3.0f);
+
+	std::cout << "m1: " << std::endl << m1.Inversed() << std::endl;
+
+	logger.Info("Successfully exited.");	
 	return EXIT_SUCCESS;
 }

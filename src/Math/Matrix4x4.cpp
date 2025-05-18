@@ -209,6 +209,10 @@ namespace Math {
         return lhs;
     }
 
+    Matrix4x4 Matrix4x4::Identity() {
+        return Matrix4x4(1.0f);
+    }
+
     Matrix4x4 Matrix4x4::RotateX(float angle) {
  		float c = std::cos(angle);
  		float s = std::sin(angle);
@@ -352,5 +356,90 @@ namespace Math {
             (*this)(2, m),
             (*this)(3, m)
         );
+    }
+
+    Matrix4x4 Matrix4x4::Inverse(Matrix4x4 const& m) {
+        return GaussJordan(m);
+    }
+
+    Matrix4x4& Matrix4x4::Inversed() {
+        _elements = GaussJordan(*this)._elements;
+
+        return *this;
+    }
+
+    Matrix4x4 Matrix4x4::GaussJordan(Matrix4x4 const& m) {
+        Matrix4x4 origin = m;
+        Matrix4x4 result(1.0f);
+
+        for (int i = 0; i < 4; i++) {
+            // diagonal element is zero
+            if (origin(i, i) == 0.0f) {
+                // find a non-zero element in the same column
+                bool found = false;
+                for (int j = i + 1; j < 4; j++) {
+                    if (origin(j, i) != 0.0f) {
+                        Vector4 line1 = origin.Line(i);
+                        Vector4 line2 = origin.Line(j);
+
+                        // swap lines
+                        result._elements[i * 4 + 0] = line2.x;
+                        result._elements[i * 4 + 1] = line2.y;
+                        result._elements[i * 4 + 2] = line2.z;
+                        result._elements[i * 4 + 3] = line2.w;
+
+                        result._elements[j * 4 + 0] = line1.x;
+                        result._elements[j * 4 + 1] = line1.y;
+                        result._elements[j * 4 + 2] = line1.z;
+                        result._elements[j * 4 + 3] = line1.w;
+
+                        found = true;
+
+                        //std::cout << "L" << i << " <-> L" << j << std::endl;
+
+                        break;
+                    }
+                }
+
+                // if no non-zero element is found, the matrix is singular
+                if (!found) {
+                    std::cerr << "Matrix is singular" << std::endl;
+                    return Matrix4x4();
+                }
+            }
+
+            // make the diagonal element 1
+            else {
+                float diagonal = origin(i, i);
+                for (int j = 0; j < 4; j++) {
+                    origin(i, j) /= diagonal;
+                    result(i, j) /= diagonal;
+                }
+            }
+
+            // make the other elements in the same column 0
+            for (int j = 0; j < 4; j++) {
+                if (j != i) {
+                    float factor = origin(j, i);
+                    for (int k = 0; k < 4; k++) {
+                        origin(j, k) -= factor * origin(i, k);
+                        result(j, k) -= factor * result(i, k);
+                    }
+                }
+            }
+
+            /*
+            std::cout << origin.Line(0) << " | " << result.Line(0) << std::endl;
+            std::cout << origin.Line(1) << " | " << result.Line(1) << std::endl;
+            std::cout << origin.Line(2) << " | " << result.Line(2) << std::endl;
+            std::cout << origin.Line(3) << " | " << result.Line(3) << std::endl;
+            std::cout << std::endl;
+            */
+        }
+
+        // multiply the result by the origin matrix
+        //std::cout << m << std::endl << " * " << std::endl << result << std::endl << " = " << std::endl << m * result << std::endl;
+
+        return result;
     }
 }
