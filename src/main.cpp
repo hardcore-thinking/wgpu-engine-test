@@ -139,7 +139,7 @@ int main() {
 
 		surface.Configure(adapter, device, window);
 
-		std::vector<VertexAttributes> vertexData {};
+		//std::vector<VertexAttributes> vertexData {};
 		std::vector<BindGroupLayout> bindGroupLayouts {};
 		std::vector<BindGroup> bindGroups {};
 
@@ -158,6 +158,7 @@ int main() {
 		std::vector<BindGroupLayoutEntry> bindGroupLayoutEntries {};
 		bindGroupLayoutEntries.push_back(BufferBindingLayout(0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, wgpu::BufferBindingType::Uniform, sizeof(MyUniforms)));
 		bindGroupLayoutEntries.push_back(TextureBindingLayout(1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float));
+		bindGroupLayoutEntries[1].texture.viewDimension = wgpu::TextureViewDimension::_3D;
 		bindGroupLayoutEntries.push_back(SamplerBindingLayout(2, wgpu::ShaderStage::Fragment, wgpu::SamplerBindingType::Filtering));
 
 		BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
@@ -170,14 +171,14 @@ int main() {
 			logger.Error("Failed to load geometry.");
 			return EXIT_FAILURE;
 		}
-		*/
-
+		
 		// MARK: Cube vertex buffer
 		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, "vertex_buffer");
 		Buffer vertexBuffer(device, vertexBufferDescriptor);
 
 		queue->writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
 		int indexCount = static_cast<int>(vertexData.size());
+		*/
 
 		// MARK: Cube binding handles
 		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
@@ -185,7 +186,8 @@ int main() {
 
 		TextureView textureView;
 		Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
-		
+
+		std::array<TextureView, 6> skyboxTextureViews {};
 		std::array<Texture, 6> skyboxTextures {
 			LoadTexture("resources/pos-x.jpg", device.Handle()),
 			LoadTexture("resources/neg-x.jpg", device.Handle()),
@@ -194,7 +196,7 @@ int main() {
 			LoadTexture("resources/pos-z.jpg", device.Handle()),
 			LoadTexture("resources/neg-z.jpg", device.Handle())
 		};
-
+		
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
 		Sampler sampler(device, samplerDescriptor);
  
@@ -227,9 +229,11 @@ int main() {
 
 		MultisampleState multisampleState;
 
+		ShaderModule skyboxShaderModule(device, "resources/skybox.wgsl");
+
 		std::vector<ConstantEntry> vertexConstantEntries {};
-		ShaderModule vertexShaderModule(device, "resources/cube.wgsl");
-		VertexState vertexState(wgpu::StringView("vert_main"), vertexShaderModule, vertexBufferLayouts, vertexConstantEntries);
+		//ShaderModule vertexShaderModule(device, "resources/cube.wgsl");
+		VertexState vertexState(wgpu::StringView("vs"), skyboxShaderModule, vertexBufferLayouts, vertexConstantEntries);
 	
 		BlendComponent colorComponent(wgpu::BlendFactor::SrcAlpha, wgpu::BlendFactor::OneMinusSrcAlpha, wgpu::BlendOperation::Add);
 		BlendComponent alphaComponent(wgpu::BlendFactor::Zero, wgpu::BlendFactor::One, wgpu::BlendOperation::Add);
@@ -238,8 +242,8 @@ int main() {
 		ColorTargetState colorTargetState(adapter, surface, blendState);
 		colorTargetStates.push_back(colorTargetState);
 		std::vector<ConstantEntry> fragmentConstantEntries {};
-		ShaderModule fragmentShaderModule(device, "resources/cube.wgsl");
-		FragmentState fragmentState(wgpu::StringView("frag_main"), fragmentShaderModule, colorTargetStates, fragmentConstantEntries);
+		//ShaderModule fragmentShaderModule(device, "resources/cube.wgsl");
+		FragmentState fragmentState(wgpu::StringView("fs"), skyboxShaderModule, colorTargetStates, fragmentConstantEntries);
 	
 		PipelineLayoutDescriptor pipelineLayoutDescriptor(bindGroupLayouts);
 		PipelineLayout pipelineLayout(device, pipelineLayoutDescriptor);
@@ -346,9 +350,9 @@ int main() {
 			RenderPassEncoder renderPassEncoder(commandEncoder, renderPassDescriptor);
 
 			renderPassEncoder->setPipeline(cubeRenderPipeline.Handle());
-			renderPassEncoder->setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
+			//renderPassEncoder->setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
 			renderPassEncoder->setBindGroup(0, bindGroups[0].Handle(), 0, nullptr);
-			renderPassEncoder->draw(indexCount, 1, 0, 0);
+			//renderPassEncoder->draw(indexCount, 1, 0, 0);
 
 			renderPassEncoder->end();
 
