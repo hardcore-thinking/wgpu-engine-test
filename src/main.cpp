@@ -120,7 +120,6 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 }
 
 int main() {
-	/*
 	try {
 		// MARK: Main instances
 		Instance instance;
@@ -164,12 +163,14 @@ int main() {
 		BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
 		bindGroupLayouts.emplace_back(device, bindGroupLayoutDescriptor);
 
+		/*
 		// MARK: Cube geometry
 		bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
 		if (!success) {
 			logger.Error("Failed to load geometry.");
 			return EXIT_FAILURE;
 		}
+		*/
 
 		// MARK: Cube vertex buffer
 		BufferDescriptor vertexBufferDescriptor(vertexData.size() * sizeof(VertexAttributes), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, "vertex_buffer");
@@ -184,6 +185,15 @@ int main() {
 
 		TextureView textureView;
 		Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
+		
+		std::array<Texture, 6> skyboxTextures {
+			LoadTexture("resources/pos-x.jpg", device.Handle()),
+			LoadTexture("resources/neg-x.jpg", device.Handle()),
+			LoadTexture("resources/pos-y.jpg", device.Handle()),
+			LoadTexture("resources/neg-y.jpg", device.Handle()),
+			LoadTexture("resources/pos-z.jpg", device.Handle()),
+			LoadTexture("resources/neg-z.jpg", device.Handle())
+		};
 
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
 		Sampler sampler(device, samplerDescriptor);
@@ -355,15 +365,6 @@ int main() {
 		std::cerr << "Exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
-	*/
-
-	Math::Matrix4x4 m1(
-		5.0f, 3.0f, 5.0f, 0.0f,
-		9.0f, 4.0f, 7.0f, 4.0f,
-		8.0f, 8.0f, 0.0f, 3.0f,
-		5.0f, 4.0f, 8.0f, 3.0f);
-
-	std::cout << "m1: " << std::endl << m1.Inversed() << std::endl;
 
 	logger.Info("Successfully exited.");	
 	return EXIT_SUCCESS;

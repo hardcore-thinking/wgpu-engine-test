@@ -35,5 +35,5 @@ void CompatibleSurface::Configure(Adapter& adapter, Device& device, Window& wind
     surfaceConfiguration.width = displayMode.w;
     _handle.configure(surfaceConfiguration);
 
-    std::cout << "Surface configured successfully" << std::endl;
+    //std::cout << "Surface configured successfully" << std::endl;
 }

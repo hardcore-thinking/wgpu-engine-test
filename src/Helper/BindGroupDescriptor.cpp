@@ -1,6 +1,7 @@
 #include <Helper/BindGroupDescriptor.hpp>
 
 BindGroupDescriptor::BindGroupDescriptor(BindGroupLayout& bindGroupLayout, std::vector<BindGroupEntry> const& bindGroupEntries) {
+    /*
     for (auto& entry : bindGroupEntries) {
         std::cout << "BindGroupEntry #" << entry.binding << std::endl;
 
@@ -20,6 +21,7 @@ BindGroupDescriptor::BindGroupDescriptor(BindGroupLayout& bindGroupLayout, std::
 
         std::cout << std::endl;
     }
+    */
 
     layout = bindGroupLayout.Handle();
     entryCount = static_cast<uint32_t>(bindGroupEntries.size());

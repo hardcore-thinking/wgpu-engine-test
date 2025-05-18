@@ -1,8 +1,6 @@
 #include <Helper/Device.hpp>
 
 Device::Device(Adapter& adapter, DeviceDescriptor const& descriptor) {
-	std::cout << "Device descriptor: " << &descriptor << std::endl;
-
 	_handle = adapter->requestDevice(descriptor);
 	if (_handle == nullptr) {
 		throw std::runtime_error("Failed to create WGPU device");
