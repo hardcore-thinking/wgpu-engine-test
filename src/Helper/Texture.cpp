@@ -6,7 +6,7 @@ Texture::Texture(Device& device, TextureDescriptor const& descriptor) {
         throw std::runtime_error("Failed to create WGPU texture");
     }
     
-    //std::cout << "Texture created successfully: " << Handle() << std::endl;
+    std::cout << "Texture created successfully: " << Handle() << std::endl;
 }
 
 Texture::Texture(wgpu::Texture const& texture) {

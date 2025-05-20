@@ -1,0 +1,4 @@
+#ifndef TEXTURE1D_HPP
+#define TEXTURE1D_HPP
+
+#endif // TEXTURE1D_HPP

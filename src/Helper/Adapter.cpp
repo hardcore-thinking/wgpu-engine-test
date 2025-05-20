@@ -3,12 +3,13 @@
 Adapter::Adapter(Instance& instance, Window const& window, Surface& surface) {
     wgpu::RequestAdapterOptions options {};
     options.compatibleSurface = surface.Handle();
-    options.powerPreference = wgpu::PowerPreference::HighPerformance;
-    options.nextInChain = nullptr;
+    //options.powerPreference = wgpu::PowerPreference::HighPerformance;
+	options.powerPreference = wgpu::PowerPreference::LowPower;
+	options.nextInChain = nullptr;
     options.forceFallbackAdapter = false;
     options.featureLevel = wgpu::FeatureLevel::Compatibility;
 
-    _handle = instance.Handle().requestAdapter(options);
+    _handle = instance->requestAdapter(options);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create WGPU adapter");
     }
@@ -21,7 +22,7 @@ Adapter::Adapter(Instance& instance, Window const& window, Surface& surface) {
 }
 
 Adapter::Adapter(Instance& instance, Window const& window, wgpu::RequestAdapterOptions const& options) {
-    _handle = instance.Handle().requestAdapter(options);
+    _handle = instance->requestAdapter(options);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create WGPU adapter");
     }

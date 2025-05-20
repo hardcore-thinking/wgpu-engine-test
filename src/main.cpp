@@ -25,7 +25,8 @@
 #include <Helper/Descriptors.hpp>
 #include <Helper/ParametersStructs.hpp>
 
-#include <Resources/Geometry.hpp>
+#include <Resources/Texture/Texture2D.hpp>
+#include <Resources/Geometry/Geometry.hpp>
 
 #include <Logger.hpp>
 #include <Math/Math.hpp>
@@ -139,7 +140,7 @@ int main() {
 
 		surface.Configure(adapter, device, window);
 
-		//std::vector<VertexAttributes> vertexData {};
+		std::vector<VertexAttributes> vertexData {};
 		std::vector<BindGroupLayout> bindGroupLayouts {};
 		std::vector<BindGroup> bindGroups {};
 
@@ -158,13 +159,12 @@ int main() {
 		std::vector<BindGroupLayoutEntry> bindGroupLayoutEntries {};
 		bindGroupLayoutEntries.push_back(BufferBindingLayout(0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, wgpu::BufferBindingType::Uniform, sizeof(MyUniforms)));
 		bindGroupLayoutEntries.push_back(TextureBindingLayout(1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float));
-		bindGroupLayoutEntries[1].texture.viewDimension = wgpu::TextureViewDimension::_3D;
+		//bindGroupLayoutEntries[1].texture.viewDimension = wgpu::TextureViewDimension::_3D;
 		bindGroupLayoutEntries.push_back(SamplerBindingLayout(2, wgpu::ShaderStage::Fragment, wgpu::SamplerBindingType::Filtering));
 
 		BindGroupLayoutDescriptor bindGroupLayoutDescriptor(bindGroupLayoutEntries);
 		bindGroupLayouts.emplace_back(device, bindGroupLayoutDescriptor);
 
-		/*
 		// MARK: Cube geometry
 		bool success = LoadGeometryFromOBJ("resources/cube.obj", vertexData);
 		if (!success) {
@@ -178,15 +178,27 @@ int main() {
 
 		queue->writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
 		int indexCount = static_cast<int>(vertexData.size());
-		*/
 
 		// MARK: Cube binding handles
 		BufferDescriptor uniformBufferDescriptor(sizeof(MyUniforms), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, "uniform_buffer");
 		Buffer uniformBuffer(device, uniformBufferDescriptor);
 
-		TextureView textureView;
-		Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
+		TextureDescriptor textureDescriptor(
+			wgpu::TextureFormat::RGBA8Unorm,
+			wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::TextureBinding,
+			{ static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1 }
+		);
+		TextureViewDescriptor textureViewDescriptor(
+			wgpu::TextureAspect::All,
+			wgpu::TextureFormat::RGBA8Unorm
+		);
 
+		Texture2D texture("resources/futuristic.png", device, queue, textureDescriptor, textureViewDescriptor);
+
+		//TextureView textureView;
+		//Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
+
+		/*
 		std::array<TextureView, 6> skyboxTextureViews {};
 		std::array<Texture, 6> skyboxTextures {
 			LoadTexture("resources/pos-x.jpg", device.Handle()),
@@ -196,14 +208,16 @@ int main() {
 			LoadTexture("resources/pos-z.jpg", device.Handle()),
 			LoadTexture("resources/neg-z.jpg", device.Handle())
 		};
-		
+		*/
+
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
 		Sampler sampler(device, samplerDescriptor);
  
 		// MARK: Cube bindings array
 		std::vector<BindGroupEntry> bindGroupEntries {};
 		bindGroupEntries.push_back(BufferBinding(0, uniformBuffer, sizeof(MyUniforms), 0));
-		bindGroupEntries.push_back(TextureBinding(1, textureView));
+		bindGroupEntries.push_back(TextureBinding(1, texture.View()));
+		//bindGroupEntries.push_back(TextureBinding(1, textureView));
 		bindGroupEntries.push_back(SamplerBinding(2, sampler));
 
 		BindGroupDescriptor bindGroupDescriptor(bindGroupLayouts[0], bindGroupEntries);
@@ -225,11 +239,12 @@ int main() {
 		DepthStencilState depthStencilState(stencilFrontFaceState, stencilBackFaceState, depthTextureFormat);
 
 		PrimitiveState primitiveState;
-		primitiveState.cullMode = wgpu::CullMode::None; // for debug purposes
+		primitiveState.cullMode = wgpu::CullMode::None; // for debug purposes, put it to None
 
 		MultisampleState multisampleState;
 
-		ShaderModule skyboxShaderModule(device, "resources/skybox.wgsl");
+		//ShaderModule skyboxShaderModule(device, "resources/skybox.wgsl");
+		ShaderModule skyboxShaderModule(device, "resources/cube.wgsl");
 
 		std::vector<ConstantEntry> vertexConstantEntries {};
 		//ShaderModule vertexShaderModule(device, "resources/cube.wgsl");
@@ -350,9 +365,9 @@ int main() {
 			RenderPassEncoder renderPassEncoder(commandEncoder, renderPassDescriptor);
 
 			renderPassEncoder->setPipeline(cubeRenderPipeline.Handle());
-			//renderPassEncoder->setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
+			renderPassEncoder->setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
 			renderPassEncoder->setBindGroup(0, bindGroups[0].Handle(), 0, nullptr);
-			//renderPassEncoder->draw(indexCount, 1, 0, 0);
+			renderPassEncoder->draw(indexCount, 1, 0, 0);
 
 			renderPassEncoder->end();
 
@@ -370,6 +385,6 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
-	logger.Info("Successfully exited.");	
+	logger.Info("Successfully exited.");
 	return EXIT_SUCCESS;
 }

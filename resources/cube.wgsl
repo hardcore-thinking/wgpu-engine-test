@@ -25,7 +25,7 @@ struct VertexOutput {
 	@location(2) uv: vec2f,
 };
 
-@vertex fn vert_main(in: VertexInput) -> VertexOutput {
+@vertex fn vs(in: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
 
 	out.position = myUniforms.projectionMatrix * myUniforms.viewMatrix * myUniforms.modelMatrix * vec4f(in.position, 1.0);
@@ -36,7 +36,7 @@ struct VertexOutput {
 	return out;
 }
 
-@fragment fn frag_main(in: VertexOutput) -> @location(0) vec4f {
+@fragment fn fs(in: VertexOutput) -> @location(0) vec4f {
 	let normal = normalize(in.normal);
 
 	//let lightColor1 = vec3f(1.0f, 0.9, 0.6);

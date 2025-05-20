@@ -1,0 +1,1 @@
+#include <Resources/Texture/Texture1D.hpp>

@@ -1,4 +1,4 @@
-#include <Resources/Geometry.hpp>
+#include <Resources/Geometry/Geometry.hpp>
 
 void WriteMipMaps(wgpu::Device device, wgpu::Texture texture, wgpu::Extent3D textureSize, uint32_t mipLevelCount, unsigned char* const data) {
 	wgpu::Queue queue = device.getQueue();

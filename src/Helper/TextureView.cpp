@@ -6,7 +6,7 @@ TextureView::TextureView(Texture& texture, TextureViewDescriptor const& descript
         throw std::runtime_error("Failed to create WGPU texture view");
     }
     
-    //std::cout << "Texture view created successfully: " << Handle() << std::endl;
+    std::cout << "Texture view created successfully: " << Handle() << std::endl;
 }
 
 TextureView::TextureView(wgpu::TextureView const& textureView) {
