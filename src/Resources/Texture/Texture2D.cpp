@@ -1,6 +1,6 @@
 #include <Resources/Texture/Texture2D.hpp>
 
-Texture2D::Texture2D(std::filesystem::path const& path, Device& device, Queue& queue, TextureDescriptor const& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor) {
+Texture2D::Texture2D(std::filesystem::path const& path, Device& device, Queue& queue, TextureDescriptor& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor) {
     int width = 0;
 	int height = 0;
 	int channels = 0;
@@ -11,19 +11,20 @@ Texture2D::Texture2D(std::filesystem::path const& path, Device& device, Queue& q
             throw std::runtime_error("Failed to load texture: " + path.string());
         }
 
-	    _texture = Texture(device, textureDescriptor);
-        _textureView = TextureView(_texture, textureViewDescriptor);
+        _texture = std::move(Texture(device, textureDescriptor));
+        _textureView = std::move(TextureView(_texture, textureViewDescriptor));
     
         TexelCopyTextureInfo copyTextureInfo(_texture);
         TexelCopyBufferLayout copyBufferLayout(4 * width, height);
 
-        queue->writeTexture(copyTextureInfo, data, textureDescriptor.size.width * textureDescriptor.size.height * 4, copyBufferLayout, textureDescriptor.size);
+        Extent3D writeSize(width, height, 1);
+        queue->writeTexture(copyTextureInfo, data, 4 * width * height, copyBufferLayout, writeSize);
 	    //WriteMipMaps(device, texture, textureDescriptor.size, textureDescriptor.mipLevelCount, data);
 
 	    stbi_image_free(data);
     }
 
-    catch (std::exception& e) {
+    catch (std::exception const& e) {
         std::cerr << "Failed to create texture: " << e.what() << std::endl;
         stbi_image_free(data);
         throw std::runtime_error("Failed to create texture or view");

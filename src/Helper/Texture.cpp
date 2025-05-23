@@ -9,16 +9,19 @@ Texture::Texture(Device& device, TextureDescriptor const& descriptor) {
     std::cout << "Texture created successfully: " << Handle() << std::endl;
 }
 
-Texture::Texture(wgpu::Texture const& texture) {
-    _handle = texture;
-    if (_handle == nullptr) {
-        throw std::runtime_error("Failed to create WGPU texture");
-    }
-    
+Texture::Texture(Texture&& other) {
+    _handle = other._handle;
+    other._handle = nullptr;
     //std::cout << "Texture created successfully: " << Handle() << std::endl;
 }
 
+Texture::Texture(wgpu::Texture&& other) {
+    _handle = other;
+    other = nullptr;
+}
+
 Texture::~Texture() {
+    std::cout << "Texture destructor called" << std::endl;
     if (_handle != nullptr) {
         _handle.destroy();
         _handle.release();
@@ -28,14 +31,27 @@ Texture::~Texture() {
     }
 }
 
-Texture& Texture::operator = (wgpu::Texture const& texture) {
-    if (_handle != nullptr) {
-        _handle.destroy();
-        _handle.release();
+Texture& Texture::operator = (Texture&& other) {
+    if (this != &other) {
+        if (_handle != nullptr) {
+            _handle.destroy();
+            _handle.release();
+        }
+        _handle = other._handle;
+        other._handle = nullptr;
     }
+    return *this;
+}
 
-    _handle = texture;
-
+Texture& Texture::operator = (wgpu::Texture&& other) {
+    if (this->Handle() != other) {
+        if (_handle != nullptr) {
+            _handle.destroy();
+            _handle.release();
+        }
+        _handle = other;
+        other = nullptr;
+    }
     return *this;
 }
 
@@ -46,3 +62,4 @@ wgpu::Texture* Texture::operator -> () {
 wgpu::Texture const* Texture::operator -> () const {
     return &_handle;
 }
+

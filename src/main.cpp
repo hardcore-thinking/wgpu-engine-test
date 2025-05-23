@@ -17,6 +17,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
+#include <wgpu-native/webgpu/wgpu.h>
+
 #include <sdl2webgpu.h>
 
 #include <Window.hpp>
@@ -65,6 +67,31 @@ auto DeviceLostCallback = [](wgpu::Device const* device, wgpu::DeviceLostReason 
 auto UncapturedErrorCallback = [](wgpu::Device const* device, wgpu::ErrorType type, wgpu::StringView message, void* userData1) {
 	std::cerr << "[Uncaptured error] (" << type << "): " << message << std::endl;
 };
+
+void LogCallback(WGPULogLevel level, WGPUStringView message, void* userData) {
+	switch (level) {
+		case wgpu::LogLevel::Error:
+			std::cerr << "[Error] " << message.data << std::endl;
+			break;
+
+		case wgpu::LogLevel::Warn:
+			std::cerr << "[Warning] " << message.data << std::endl;
+			break;
+
+		case wgpu::LogLevel::Info:
+			std::cout << "[Info] " << message.data << std::endl;
+			break;
+
+		case wgpu::LogLevel::Debug:
+			std::cout << "[Debug] " << message.data << std::endl;
+			break;
+
+		default:
+			std::cout << "[Unknown] " << message.data << std::endl;
+			break;
+	}
+}
+
 
 bool running = false;
 
@@ -120,6 +147,8 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 	return textureView;
 }
 
+WGPULogCallback logCallbackHandle = LogCallback;
+
 int main() {
 	try {
 		// MARK: Main instances
@@ -138,6 +167,9 @@ int main() {
 		Device device(adapter, deviceDescriptor);
 		Queue queue(device);
 
+		const char* test = "test";
+		wgpuSetLogCallback(logCallbackHandle, &test);
+		
 		surface.Configure(adapter, device, window);
 
 		std::vector<VertexAttributes> vertexData {};
@@ -186,8 +218,13 @@ int main() {
 		TextureDescriptor textureDescriptor(
 			wgpu::TextureFormat::RGBA8Unorm,
 			wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::TextureBinding,
-			{ static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1 }
+			Extent3D(windowWidth, windowHeight, 1)
 		);
+
+		textureDescriptor.size.width = 2048;
+		textureDescriptor.size.height = 2048;
+		textureDescriptor.size.depthOrArrayLayers = 1;
+
 		TextureViewDescriptor textureViewDescriptor(
 			wgpu::TextureAspect::All,
 			wgpu::TextureFormat::RGBA8Unorm
@@ -196,7 +233,7 @@ int main() {
 		Texture2D texture("resources/futuristic.png", device, queue, textureDescriptor, textureViewDescriptor);
 
 		//TextureView textureView;
-		//Texture texture = LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle());
+		//Texture texture = std::move(LoadTexture("resources/futuristic.png", device.Handle(), &textureView.Handle()));
 
 		/*
 		std::array<TextureView, 6> skyboxTextureViews {};
@@ -233,7 +270,7 @@ int main() {
 		TextureViewDescriptor depthTextureViewDescriptor(wgpu::TextureAspect::DepthOnly, depthTextureFormat);
 		TextureView depthTextureView(depthTexture, depthTextureViewDescriptor);
 
-		// MARK: Cube ender pipeline
+		// MARK: Cube render pipeline
 		StencilFaceState stencilBackFaceState;
 		StencilFaceState stencilFrontFaceState;
 		DepthStencilState depthStencilState(stencilFrontFaceState, stencilBackFaceState, depthTextureFormat);
@@ -335,7 +372,7 @@ int main() {
 			}
 
 			// MARK: Update	
-			TextureView textureView = GetNextTexture(device.Handle(), surface.Handle());
+			TextureView textureView = std::move(GetNextTexture(device.Handle(), surface.Handle()));
 
 			uniforms.time = -static_cast<float>(currentTime - spaceTimer.pauseTimeSum) / 1000;
 			queue->writeBuffer(uniformBuffer.Handle(), offsetof(MyUniforms, time), &uniforms.time, sizeof(MyUniforms::time));

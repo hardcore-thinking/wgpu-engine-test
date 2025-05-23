@@ -24,7 +24,7 @@
 class Texture2D {
     public:
         Texture2D() = default;
-        Texture2D(std::filesystem::path const& path, Device& device, Queue& queue, TextureDescriptor const& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor);
+        Texture2D(std::filesystem::path const& path, Device& device, Queue& queue, TextureDescriptor& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor);
         ~Texture2D() = default;
 
         Texture const& Handle() const { return _texture; }

@@ -26,5 +26,7 @@
 #include <Helper/BindGroup.hpp>
 #include <Helper/RenderPassColorAttachment.hpp>
 #include <Helper/RenderPassDepthStencilAttachment.hpp>
+#include <Helper/Extent3D.hpp>
+#include <Helper/Origin3D.hpp>
 
 #endif // PARAMETERSSTRUCTS_HPP

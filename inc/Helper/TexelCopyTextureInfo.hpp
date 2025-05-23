@@ -8,7 +8,7 @@
 
 struct TexelCopyTextureInfo : public wgpu::TexelCopyTextureInfo {
     TexelCopyTextureInfo() = default;
-    TexelCopyTextureInfo(Texture texture);
+    TexelCopyTextureInfo(Texture const& texture);
 };
 
 #endif // TEXELCOPYTEXTUREINFO_HPP
