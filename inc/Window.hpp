@@ -11,8 +11,8 @@ struct WindowCreationInfo {
 	std::string title = "SDL window";
 	int x = SDL_WINDOWPOS_CENTERED;
 	int y = SDL_WINDOWPOS_CENTERED;
-	int w = 640;
-	int h = 480;
+	int w = 1920;
+	int h = 1080;
 	Uint32 flags = SDL_WINDOW_SHOWN;
 };
 

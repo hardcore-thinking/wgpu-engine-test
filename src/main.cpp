@@ -14,10 +14,17 @@
 #define WEBGPU_CPP_IMPLEMENTATION
 #include <wgpu-native/webgpu.hpp>
 
+#include <webgpu/webgpu.h>
+
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
 
 #include <sdl2webgpu.h>
+
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include <imgui/backends/imgui_impl_wgpu.h>
 
 #include <Window.hpp>
 
@@ -42,8 +49,8 @@
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
-constexpr float windowWidth = 640.0f;
-constexpr float windowHeight = 480.0f;
+constexpr float windowWidth = 1920.0f;
+constexpr float windowHeight = 1080.0f;
 
 struct MyUniforms {
 	Math::Matrix4x4 projectionMatrix {};
@@ -115,6 +122,10 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 	textureViewDescriptor.aspect = wgpu::TextureAspect::All;
 	textureViewDescriptor.nextInChain = nullptr;
 	wgpu::TextureView textureView = texture.createView(textureViewDescriptor);
+	if (!textureView) {
+		std::cerr << "Failed to acquire swapchain texture, skipping frame." << std::endl;
+		return nullptr;
+	}
 
 	return textureView;
 }
@@ -133,7 +144,7 @@ static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, Compa
 	std::vector<ConstantEntry> vertexConstantEntries {};
 	ShaderModule vertexShaderModule(device, "resources/shader.wgsl");
 	VertexState vertexState(wgpu::StringView("vert_main"), vertexShaderModule, vertexBufferLayouts, vertexConstantEntries);
-	
+
 	BlendComponent colorComponent(wgpu::BlendFactor::SrcAlpha, wgpu::BlendFactor::OneMinusSrcAlpha, wgpu::BlendOperation::Add);
 	BlendComponent alphaComponent(wgpu::BlendFactor::Zero, wgpu::BlendFactor::One, wgpu::BlendOperation::Add);
 	BlendState blendState(colorComponent, alphaComponent);
@@ -143,7 +154,7 @@ static RenderPipeline InitRenderPipeline(Device& device, Adapter& adapter, Compa
 	std::vector<ConstantEntry> fragmentConstantEntries {};
 	ShaderModule fragmentShaderModule(device, "resources/shader.wgsl");
 	FragmentState fragmentState(wgpu::StringView("frag_main"), fragmentShaderModule, colorTargetStates, fragmentConstantEntries);
-	
+
 	PipelineLayoutDescriptor pipelineLayoutDescriptor(bindGroupLayouts);
 	PipelineLayout pipelineLayout(device, pipelineLayoutDescriptor);
 
@@ -179,7 +190,7 @@ int main() {
 		std::vector<wgpu::TextureFormat> viewFormats { depthTextureFormat };
 		TextureDescriptor depthTextureDescriptor(depthTextureFormat, wgpu::TextureUsage::RenderAttachment, { static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1 }, viewFormats);
 		Texture depthTexture(device, depthTextureDescriptor);
-	
+
 		TextureViewDescriptor depthTextureViewDescriptor(wgpu::TextureAspect::DepthOnly, depthTextureFormat);
 		TextureView depthTextureView(depthTexture, depthTextureViewDescriptor);
 
@@ -222,7 +233,7 @@ int main() {
 
 		queue->writeBuffer(vertexBuffer.Handle(), 0, vertexData.data(), vertexBufferDescriptor.size);
 		int indexCount = static_cast<int>(vertexData.size());
- 
+
 		std::vector<BindGroupEntry> bindGroupEntries {};
 		bindGroupEntries.push_back(BufferBinding(0, uniformBuffer, sizeof(MyUniforms), 0));
 		bindGroupEntries.push_back(TextureBinding(1, textureView));
@@ -235,9 +246,9 @@ int main() {
 		bindGroups.emplace_back(device, bindGroupDescriptor);
 
 		RenderPipeline cubeRenderPipeline = InitRenderPipeline(device, adapter, surface, bindGroupLayouts, vertexBufferLayouts);
-	
+
 		Math::Vector3 cameraPosition(-300.0, -400.0, -300.0);
-		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);	
+		Math::Matrix4x4 S = Math::Matrix4x4::Scale(100.0f);
 		Math::Matrix4x4 L = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3( 0.0f,  0.0f, 0.0f), Math::Vector3( 0.0f,  0.0f, 1.0f));
 
 		float ratio = windowWidth / windowHeight;
@@ -268,6 +279,23 @@ int main() {
 			Uint64 pauseTimeSum = 0;
 		} spaceTimer;
 
+
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void) io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+		ImGui::StyleColorsDark();
+
+		ImGui_ImplWGPU_InitInfo init_info;
+		init_info.Device = device.Handle();
+		init_info.NumFramesInFlight = 3;
+		init_info.RenderTargetFormat = WGPUTextureFormat_BGRA8Unorm;
+		init_info.DepthStencilFormat = WGPUTextureFormat_Undefined;
+		ImGui_ImplWGPU_Init(&init_info);
+
+
 		SDL_Event event {};
 		while (running) {
 			static Uint64 currentTime = 0ULL;
@@ -290,17 +318,21 @@ int main() {
 					cameraPosition.y -= 0.01f;
 				}
 
+				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
+					surface.Configure(adapter, device, window);
+				}
+
 				if (keyboard[SDL_SCANCODE_SPACE] && (currentTime - spaceTimer.lastSpaceTime) > 100) {
 					moveCamera = !moveCamera;
-					
+
 					if (moveCamera) {
 						spaceTimer.pauseTimeSum += currentTime - spaceTimer.lastSpaceTime;
 					}
-					
+
 					spaceTimer.lastSpaceTime = currentTime;
 				}
 			}
-			
+
 			TextureView textureView = GetNextTexture(device.Handle(), surface.Handle());
 
 			uniforms.time = -static_cast<float>(currentTime - spaceTimer.pauseTimeSum) / 1000;
@@ -329,17 +361,29 @@ int main() {
 			RenderPassDescriptor renderPassDescriptor(renderPassColorAttachments, renderPassDepthStencilAttachment);
 			RenderPassEncoder renderPassEncoder(commandEncoder, renderPassDescriptor);
 
+			ImGui_ImplWGPU_NewFrame();
+			ImGui_ImplSDL2_NewFrame();
+			std::cout << "ImGui frame rendered." << std::endl;
+			ImGui::NewFrame();
+			ImGui::Begin("Hello, world!");
+			ImGui::Text("This is some useful text.");
+			ImGui::End();
+			ImGui::Render();
+
+
 			renderPassEncoder->setPipeline(cubeRenderPipeline.Handle());
 			renderPassEncoder->setVertexBuffer(0, vertexBuffer.Handle(), 0, vertexData.size() * sizeof(VertexAttributes));
 			renderPassEncoder->setBindGroup(0, bindGroups[0].Handle(), 0, nullptr);
 			renderPassEncoder->draw(indexCount, 1, 0, 0);
 
+			ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPassEncoder.Handle());
 			renderPassEncoder->end();
 
 			CommandBufferDescriptor commandBufferDescriptor;
 			CommandBuffer commandBuffer(commandEncoder);
-		
+
 			queue->submit(commandBuffer.Handle());
+
 
 			surface->present();
 		}
@@ -350,6 +394,9 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
+	ImGui_ImplWGPU_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
 	logger.Info("Successfully exited.");
 	return EXIT_SUCCESS;
 }
