@@ -82,10 +82,10 @@ target("wgpu-test")
 
     add_includedirs("inc")
     add_extrafiles("xmake.lua")
-    add_extrafiles("resources/*")
+    add_extrafiles("resources/**")
 
     set_rundir(".")
-    add_installfiles("resources/*")
+    add_installfiles("resources/**")
 target_end()
 
 target("vector2-tests")

@@ -23,9 +23,6 @@
 
 struct VertexAttributes {
 	Math::Vector3 position {};
-	Math::Vector3 normal {};
-	Math::Vector3 color {};
-	Math::Vector2 uv {};
 };
 
 void WriteMipMaps(wgpu::Device device, wgpu::Texture texture, wgpu::Extent3D textureSize, uint32_t mipLevelCount, unsigned char* const data);

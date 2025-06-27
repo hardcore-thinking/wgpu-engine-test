@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 
+#include <Math/Matrix3x3.hpp>
 #include <Math/Matrix4x4.hpp>
 #include <Math/Vector2.hpp>
 #include <Math/Vector3.hpp>

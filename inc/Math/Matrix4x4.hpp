@@ -48,7 +48,7 @@ namespace Math {
             friend Matrix4x4& operator *= (Matrix4x4& lhs, Matrix4x4 const& rhs);
 
             friend Matrix4x4 operator / (Matrix4x4 const& lhs, float const& rhs);
-            friend Matrix4x4 operator /= (Matrix4x4& lhs, float const& rhs);
+            friend Matrix4x4& operator /= (Matrix4x4& lhs, float const& rhs);
 
             static Matrix4x4 Identity();
  
@@ -74,9 +74,6 @@ namespace Math {
 
             Vector4 Line(size_t n) const;
             Vector4 Column(size_t m) const;
-
-        private:
-            static Matrix4x4 GaussJordan(Matrix4x4 const& m);
 
         private:
             std::array<float, 16> _elements {};

@@ -55,30 +55,30 @@ namespace Math {
 
     float& Matrix4x4::operator [] (size_t index) {
         assert("Index must be in the bounds of the matrix"
-            && index >= 0 && index < 16);
+               && index >= 0 && index < 16);
 
         return _elements[index];
     }
 
     float const& Matrix4x4::operator [] (size_t index) const {
         assert("Index must be in the bounds of the matrix"
-            && index >= 0 && index < 16);
+               && index >= 0 && index < 16);
 
         return _elements[index];
     }
 
     float& Matrix4x4::operator () (size_t n, size_t m) {
         assert("Indices must be in the bounds of the matrix"
-            && n >= 0 && n < 4
-            && m >= 0 && m < 4);
+               && n >= 0 && n < 4
+               && m >= 0 && m < 4);
     
         return _elements[n * 4 + m];
     }
 
     float const& Matrix4x4::operator () (size_t n, size_t m) const {
         assert("Indices must be in the bounds of the matrix"
-            && n >= 0 && n < 4
-            && m >= 0 && m < 4);
+               && n >= 0 && n < 4
+               && m >= 0 && m < 4);
     
         return _elements[n * 4 + m];
     }
@@ -203,7 +203,7 @@ namespace Math {
         );
     }
 
-    Matrix4x4 operator /= (Matrix4x4& lhs, float const& rhs) {
+    Matrix4x4& operator /= (Matrix4x4& lhs, float const& rhs) {
         lhs = lhs / rhs;
 
         return lhs;
@@ -326,19 +326,14 @@ namespace Math {
     }
 
     Matrix4x4& Matrix4x4::Transposed() {
-        _elements = {
-            _elements[0], _elements[4],  _elements[8], _elements[12],
-            _elements[1], _elements[5],  _elements[9], _elements[13],
-            _elements[2], _elements[6], _elements[10], _elements[14],
-            _elements[3], _elements[7], _elements[11], _elements[15]
-        };
+        *this = Matrix4x4::Transpose(*this);
 
         return *this;
     }
 
     Vector4 Matrix4x4::Line(size_t n) const {
         assert("Indices must be in the bounds of the matrix"
-            && n >= 0 && n < 4);
+               && n >= 0 && n < 4);
         return Vector4(
             (*this)(n, 0),
             (*this)(n, 1),
@@ -349,7 +344,7 @@ namespace Math {
 
     Vector4 Matrix4x4::Column(size_t m) const {
         assert("Indices must be in the bounds of the matrix"
-            && m >= 0 && m < 4);
+               && m >= 0 && m < 4);
         return Vector4(
             (*this)(0, m),
             (*this)(1, m),
@@ -358,6 +353,7 @@ namespace Math {
         );
     }
 
+    /*
     Matrix4x4 Matrix4x4::Inverse(Matrix4x4 const& m) {
         return GaussJordan(m);
     }
@@ -368,78 +364,17 @@ namespace Math {
         return *this;
     }
 
-    Matrix4x4 Matrix4x4::GaussJordan(Matrix4x4 const& m) {
-        Matrix4x4 origin = m;
-        Matrix4x4 result(1.0f);
+    Matrix4x4 CofactorMatrix(Matrix4x4 const& m) {
+        Matrix4x4 cofactor;
 
-        for (int i = 0; i < 4; i++) {
-            // diagonal element is zero
-            if (origin(i, i) == 0.0f) {
-                // find a non-zero element in the same column
-                bool found = false;
-                for (int j = i + 1; j < 4; j++) {
-                    if (origin(j, i) != 0.0f) {
-                        Vector4 line1 = origin.Line(i);
-                        Vector4 line2 = origin.Line(j);
-
-                        // swap lines
-                        result._elements[i * 4 + 0] = line2.x;
-                        result._elements[i * 4 + 1] = line2.y;
-                        result._elements[i * 4 + 2] = line2.z;
-                        result._elements[i * 4 + 3] = line2.w;
-
-                        result._elements[j * 4 + 0] = line1.x;
-                        result._elements[j * 4 + 1] = line1.y;
-                        result._elements[j * 4 + 2] = line1.z;
-                        result._elements[j * 4 + 3] = line1.w;
-
-                        found = true;
-
-                        //std::cout << "L" << i << " <-> L" << j << std::endl;
-
-                        break;
-                    }
-                }
-
-                // if no non-zero element is found, the matrix is singular
-                if (!found) {
-                    std::cerr << "Matrix is singular" << std::endl;
-                    return Matrix4x4();
-                }
+        for (size_t i = 0; i < 4; ++i) {
+            for (size_t j = 0; j < 4; ++j) {
+                size_t sign = ((i + j) % 2 == 0) ? 1 : -1;
+                cofactor(i, j) = sign * Minor(m, i, j);
             }
-
-            // make the diagonal element 1
-            else {
-                float diagonal = origin(i, i);
-                for (int j = 0; j < 4; j++) {
-                    origin(i, j) /= diagonal;
-                    result(i, j) /= diagonal;
-                }
-            }
-
-            // make the other elements in the same column 0
-            for (int j = 0; j < 4; j++) {
-                if (j != i) {
-                    float factor = origin(j, i);
-                    for (int k = 0; k < 4; k++) {
-                        origin(j, k) -= factor * origin(i, k);
-                        result(j, k) -= factor * result(i, k);
-                    }
-                }
-            }
-
-            /*
-            std::cout << origin.Line(0) << " | " << result.Line(0) << std::endl;
-            std::cout << origin.Line(1) << " | " << result.Line(1) << std::endl;
-            std::cout << origin.Line(2) << " | " << result.Line(2) << std::endl;
-            std::cout << origin.Line(3) << " | " << result.Line(3) << std::endl;
-            std::cout << std::endl;
-            */
         }
 
-        // multiply the result by the origin matrix
-        //std::cout << m << std::endl << " * " << std::endl << result << std::endl << " = " << std::endl << m * result << std::endl;
-
-        return result;
+        return cofactor;
     }
+    */
 }

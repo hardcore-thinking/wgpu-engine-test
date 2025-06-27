@@ -30,3 +30,5 @@ Texture2D::Texture2D(std::filesystem::path const& path, Device& device, Queue& q
         throw std::runtime_error("Failed to create texture or view");
     }
 }
+
+Texture2D::Texture2D(Texture2D&& other) : _texture(std::move(other._texture)), _textureView(std::move(other._textureView)) {}

@@ -23,16 +23,21 @@ void CompatibleSurface::Configure(Adapter& adapter, Device& device, Window& wind
     wgpu::SurfaceCapabilities surfaceCapabilities;
     _handle.getCapabilities(adapter.Handle(), &surfaceCapabilities);
 
-    SDL_DisplayMode displayMode = window.DisplayMode();
+    //SDL_DisplayMode displayMode = window.DisplayMode();
+    int width = 0;
+    int height = 0;
+    SDL_GetWindowSize(window.Handle(), &width, &height);
+
+    std::cout << "Window size: " << width << "x" << height << std::endl;
 
     surfaceConfiguration.format = surfaceCapabilities.formats[0];
-    surfaceConfiguration.height = displayMode.h;
+    surfaceConfiguration.height = height;
     surfaceConfiguration.nextInChain = nullptr;
     surfaceConfiguration.presentMode = wgpu::PresentMode::Fifo;
     surfaceConfiguration.usage = wgpu::TextureUsage::RenderAttachment;
     surfaceConfiguration.viewFormatCount = textureFormats.size();
     surfaceConfiguration.viewFormats = (WGPUTextureFormat*)(textureFormats.data());
-    surfaceConfiguration.width = displayMode.w;
+    surfaceConfiguration.width = width;
     _handle.configure(surfaceConfiguration);
 
     //std::cout << "Surface configured successfully" << std::endl;

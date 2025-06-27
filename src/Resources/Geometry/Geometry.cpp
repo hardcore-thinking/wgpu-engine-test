@@ -237,23 +237,6 @@ bool LoadGeometryFromOBJ(std::filesystem::path const& path, std::vector<VertexAt
 				-attrib.vertices[3 * idx.vertex_index + 2],
 				 attrib.vertices[3 * idx.vertex_index + 1]
 			};
-
-			vertexData[i].normal = {
-				 attrib.normals[3 * idx.normal_index + 0],
-				-attrib.normals[3 * idx.normal_index + 2],
-				 attrib.normals[3 * idx.normal_index + 1]
-			};
-
-			vertexData[i].color = {
-				 attrib.colors[3 * idx.vertex_index + 0],
-				 attrib.colors[3 * idx.vertex_index + 1],
-				 attrib.colors[3 * idx.vertex_index + 2]
-			};
-
-			vertexData[i].uv = {
-				 attrib.texcoords[2 * idx.texcoord_index + 0],
-				 1 - attrib.texcoords[2 * idx.texcoord_index + 1]
-			};
 		}
 	}
 

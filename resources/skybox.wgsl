@@ -28,5 +28,5 @@ struct VertexOutput {
 
 @fragment fn fs(out: VertexOutput) -> @location(0) vec4f {
     let t = uniforms.viewDirectionProjectionInverse * out.pos;
-    return textureSample(skyboxTexture, skyboxSampler, normalize(t.xyz / t.w) * vec3f(1, 1, -1));
+    return vec4f(pow((textureSample(skyboxTexture, skyboxSampler, normalize(t.xyz / t.w) * vec3f(1, 1, -1))).rgb, vec3f(2.2)), 1.0);
 }
