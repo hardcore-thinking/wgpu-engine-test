@@ -48,6 +48,7 @@ namespace Math {
             friend Matrix2x2 operator / (Matrix2x2 const& lhs, float const& rhs);
             friend Matrix2x2& operator /= (Matrix2x2& lhs, float const& rhs);
 
+            static float Determinant(Matrix2x2 const& m);
             static Matrix2x2 Identity();
 
             static Matrix2x2 Transpose(Matrix2x2 const& m);

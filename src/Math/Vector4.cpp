@@ -82,7 +82,7 @@ namespace Math {
     }
 
     std::ostream& operator << (std::ostream& out, Vector4 const& m) {
-        out << std::setprecision(2) << std::fixed << m.x << " " << m.y << " " << m.z << " " << m.w;
+        out << std::setprecision(4) << std::fixed << m.x << " " << m.y << " " << m.z << " " << m.w;
 
         return out;
     }

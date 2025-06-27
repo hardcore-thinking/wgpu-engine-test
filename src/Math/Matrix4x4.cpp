@@ -104,7 +104,7 @@ namespace Math {
 
     std::ostream& operator << (std::ostream& out, Matrix4x4 const& m) {
         for (int i = 0; i < 16; i++) {
-            out << std::setprecision(2) << std::fixed << ((i != 0 && i % 4 == 0) ? "\n" : "") << m[i] << " ";
+            out << std::setprecision(4) << std::fixed << ((i != 0 && i % 4 == 0) ? "\n" : "") << m[i] << " ";
         }
 
         return out;
@@ -207,6 +207,13 @@ namespace Math {
         lhs = lhs / rhs;
 
         return lhs;
+    }
+
+    float Matrix4x4::Determinant(Matrix4x4 const& m) {
+        return m(0, 0) * Matrix3x3::Determinant(m.Submatrix(0, 0)) -
+               m(0, 1) * Matrix3x3::Determinant(m.Submatrix(0, 1)) +
+               m(0, 2) * Matrix3x3::Determinant(m.Submatrix(0, 2)) -
+               m(0, 3) * Matrix3x3::Determinant(m.Submatrix(0, 3));
     }
 
     Matrix4x4 Matrix4x4::Identity() {
@@ -325,8 +332,22 @@ namespace Math {
         );
     }
 
+    Matrix4x4 Matrix4x4::Inverse(Matrix4x4 const& m) {
+        float det = Determinant(m);
+        assert("Matrix is not invertible"
+               && det != 0.0f);
+
+        return Transpose(m.CofactorMatrix()) / det;
+    }
+
     Matrix4x4& Matrix4x4::Transposed() {
-        *this = Matrix4x4::Transpose(*this);
+        *this = Transpose(*this);
+
+        return *this;
+    }
+
+    Matrix4x4& Matrix4x4::Inversed() {
+        _elements = Inverse(*this)._elements;
 
         return *this;
     }
@@ -353,28 +374,42 @@ namespace Math {
         );
     }
 
-    /*
-    Matrix4x4 Matrix4x4::Inverse(Matrix4x4 const& m) {
-        return GaussJordan(m);
+    Matrix3x3 Matrix4x4::Submatrix(size_t i, size_t j) const {
+        assert("Indices must be in the bounds of the matrix"
+               && i >= 0 && i < 4
+               && j >= 0 && j < 4);
+
+        Matrix3x3 sub;
+        size_t index = 0;
+
+        for (size_t row = 0; row < 4; ++row) {
+            if (row == i) continue;
+            for (size_t col = 0; col < 4; ++col) {
+                if (col == j) continue;
+                sub[index++] = (*this)(row, col);
+            }
+        }
+
+        return sub;
     }
 
-    Matrix4x4& Matrix4x4::Inversed() {
-        _elements = GaussJordan(*this)._elements;
+    float Matrix4x4::Cofactor(size_t i, size_t j) const {
+        assert("Indices must be in the bounds of the matrix"
+               && i >= 0 && i < 4
+               && j >= 0 && j < 4);
 
-        return *this;
+        return ((i + j) % 2 == 0 ? 1.0f : -1.0f) * Matrix3x3::Determinant(Submatrix(i, j));
     }
 
-    Matrix4x4 CofactorMatrix(Matrix4x4 const& m) {
+    Matrix4x4 Matrix4x4::CofactorMatrix() const {
         Matrix4x4 cofactor;
 
         for (size_t i = 0; i < 4; ++i) {
             for (size_t j = 0; j < 4; ++j) {
-                size_t sign = ((i + j) % 2 == 0) ? 1 : -1;
-                cofactor(i, j) = sign * Minor(m, i, j);
+                cofactor(i, j) = Cofactor(i, j);
             }
         }
 
         return cofactor;
     }
-    */
 }

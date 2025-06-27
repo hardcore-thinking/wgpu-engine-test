@@ -7,6 +7,7 @@
 #include <array>
 #include <cassert>
 
+#include <Math/Matrix2x2.hpp>
 #include <Math/Vector3.hpp>
 
 namespace Math {
@@ -49,6 +50,7 @@ namespace Math {
             friend Matrix3x3 operator / (Matrix3x3 const& lhs, float const& rhs);
             friend Matrix3x3& operator /= (Matrix3x3& lhs, float const& rhs);
 
+            static float Determinant(Matrix3x3 const& m);
             static Matrix3x3 Identity();
  
  			static Matrix3x3 RotateX(float angle);
@@ -59,7 +61,7 @@ namespace Math {
 
             static Matrix3x3 Scale(float s);
  			static Matrix3x3 Scale(float sx, float sy);
- 
+
             static Matrix3x3 Transpose(Matrix3x3 const& m);
             static Matrix3x3 Inverse(Matrix3x3 const& m);
 
@@ -68,6 +70,10 @@ namespace Math {
 
             Vector3 Line(size_t n) const;
             Vector3 Column(size_t m) const;
+
+            Matrix2x2 Submatrix(size_t i, size_t j) const;
+            float Cofactor(size_t i, size_t j) const;
+            Matrix3x3 CofactorMatrix() const;
 
         private:
             std::array<float, 9> _elements {};

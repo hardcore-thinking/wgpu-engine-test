@@ -32,7 +32,7 @@ namespace Math {
     }
 
     std::ostream& operator << (std::ostream& out, Vector2 const& m) {
-        out << std::setprecision(3) << "[" << std::fixed << m.x << ", " << m.y << "]";
+        out << std::setprecision(4) << "[" << std::fixed << m.x << ", " << m.y << "]";
 
         return out;
     }

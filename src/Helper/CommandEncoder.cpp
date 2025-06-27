@@ -15,7 +15,7 @@ CommandEncoder::~CommandEncoder() {
         _handle = nullptr;
     }
     
-    std::cout << "Command encoder destroyed successfully " << std::endl;
+    //std::cout << "Command encoder destroyed successfully " << std::endl;
 }
 
 wgpu::CommandEncoder* CommandEncoder::operator -> () {

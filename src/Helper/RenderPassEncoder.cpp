@@ -15,7 +15,7 @@ RenderPassEncoder::~RenderPassEncoder() {
         _handle = nullptr;
     }
 
-    std::cout << "Render pass encoder destroyed successfully" << std::endl;
+    //std::cout << "Render pass encoder destroyed successfully" << std::endl;
 }
 
 wgpu::RenderPassEncoder* RenderPassEncoder::operator -> () {

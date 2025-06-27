@@ -15,5 +15,5 @@ CommandBuffer::~CommandBuffer() {
         _handle = nullptr;
     }
 
-    std::cout << "Command buffer destroyed successfully" << std::endl;
+    //std::cout << "Command buffer destroyed successfully" << std::endl;
 }

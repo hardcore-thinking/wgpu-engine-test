@@ -90,7 +90,7 @@ namespace Math {
 
     std::ostream& operator << (std::ostream& out, Matrix2x2 const& m) {
         for (int i = 0; i < 4; i++) {
-            out << std::setprecision(2) << std::fixed << ((i != 0 && i % 2 == 0) ? "\n" : "") << m[i] << " ";
+            out << std::setprecision(4) << std::fixed << ((i != 0 && i % 2 == 0) ? "\n" : "") << m[i] << " ";
         }
 
         return out;
@@ -173,8 +173,42 @@ namespace Math {
         return lhs;
     }
 
+    float Matrix2x2::Determinant(Matrix2x2 const& m) {
+        return m(0, 0) * m(1, 1) - m(0, 1) * m(1, 0);
+    }
+
     Matrix2x2 Matrix2x2::Identity() {
         return Matrix2x2(1.0f);
+    }
+
+    Matrix2x2 Matrix2x2::Transpose(Matrix2x2 const& m) {
+        return Matrix2x2(
+            m(0, 0), m(1, 0),
+            m(0, 1), m(1, 1)
+        );
+    }
+
+    Matrix2x2 Matrix2x2::Inverse(Matrix2x2 const& m) {
+        float det = Determinant(m);
+        assert("Matrix is not invertible"
+               && det != 0.0f);
+
+        return Matrix2x2(
+             m(1, 1) / det, -m(0, 1) / det,
+            -m(1, 0) / det,  m(0, 0) / det
+        );
+    }
+
+    Matrix2x2& Matrix2x2::Transposed() {
+        *this = Transpose(*this);
+
+        return *this;
+    }
+
+    Matrix2x2& Matrix2x2::Inversed() {
+        _elements = Inverse(*this)._elements;
+
+        return *this;
     }
 
     Vector2 Matrix2x2::Line(size_t n) const {

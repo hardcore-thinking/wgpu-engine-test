@@ -51,7 +51,7 @@
 #include <glm/ext.hpp>
 
 std::ostream& operator << (std::ostream& out, glm::mat4 const& m) {
-	out << std::fixed << std::setprecision(2);
+	out << std::fixed << std::setprecision(4);
 	for (size_t i = 0; i < 4; ++i) {
 		for (size_t j = 0; j < 4; ++j) {
 			out << m[i][j] << " ";
@@ -63,7 +63,7 @@ std::ostream& operator << (std::ostream& out, glm::mat4 const& m) {
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
-constexpr float windowWidth = 640.0f;
+constexpr float windowWidth = 853.0f;
 constexpr float windowHeight = 640.0f;
 
 struct MyUniforms {
@@ -194,7 +194,7 @@ int main() {
 		Queue queue(device);
 
 		const char* test = "test";
-		wgpuSetLogCallback(logCallbackHandle, &test);
+		//wgpuSetLogCallback(logCallbackHandle, &test);
 		
 		surface.Configure(adapter, device, window);
 
@@ -318,47 +318,23 @@ int main() {
 		float time = 0.0f;
 
 		// MARK: Uniforms initialization
-		Math::Vector3 cameraPosition(std::cos(time * 0.1), std::sin(time * 0.1), 0.0f);
+		Math::Vector3 cameraPosition(std::cos(time * 0.2), std::sin(time * 0.2), 0.0f);
 		Math::Matrix4x4 view = Math::Matrix4x4::LookAt(
 			cameraPosition,
 			Math::Vector3( 0.0f,  0.0f, 0.0f),
-			Math::Vector3( 0.0f,  0.0f, 1.0f)
-		);
-		glm::mat4 viewGLM = glm::lookAt(
-			glm::vec3(cameraPosition.x, cameraPosition.y, cameraPosition.z),
-			glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(0.0f, 0.0f, 1.0f)
+			Math::Vector3( 0.0f,  1.0f, 0.0f)
 		);
 
 		float ratio = windowWidth / windowHeight;
 		float vfov = 60.0f * PI / 180.0f;
-		float near = 0.01f;
+		float near = 0.1f;
 		float far = 1000.0f;
 		Math::Matrix4x4 projection = Math::Matrix4x4::Perspective(vfov, ratio, near, far);
-		glm::mat4 projectionGLM = glm::perspective(vfov, ratio, near, far);
-
-		Math::Matrix4x4 viewProjection = Math::Matrix4x4::Transpose(projection * view);
-		glm::mat4 viewProjectionGLM = projectionGLM * viewGLM;
-
-		Math::Matrix4x4 viewProjectionInverse = Math::Matrix4x4::Inverse(viewProjection);
-		glm::mat4 viewProjectionInverseGLM = glm::inverse(viewProjectionGLM);
+		Math::Matrix4x4 viewProjection = projection * view;
 
 		MyUniforms uniforms = {
-			.viewDirectionProjectionInverse = Math::Matrix4x4::Inverse(viewProjection)
-			//.viewDirectionProjectionInverse = Math::Matrix4x4::Identity()
+			.viewDirectionProjectionInverse = Math::Matrix4x4::Transpose(Math::Matrix4x4::Inverse(viewProjection))
 		};
-
-		std::cout << "Projection matrix (own): " << std::endl << projection << std::endl;
-		std::cout << "Projection matrix (glm): " << std::endl << projectionGLM << std::endl;
-		
-		std::cout << "View matrix (own): " << std::endl << view << std::endl;
-		std::cout << "View matrix (glm): " << std::endl << viewGLM << std::endl;
-		
-		std::cout << "View projection matrix (own): " << std::endl << viewProjection << std::endl;
-		std::cout << "View projection matrix (glm): " << std::endl << viewProjectionGLM << std::endl;
-		
-		std::cout << "View projection matrix inverse (own): " << std::endl << viewProjectionInverse << std::endl;
-		std::cout << "View projection matrix inverse (glm): " << std::endl << viewProjectionInverseGLM << std::endl;
 
 		queue->writeBuffer(uniformBuffer.Handle(), 0, &uniforms, sizeof(MyUniforms));
 
@@ -374,7 +350,7 @@ int main() {
 
 			currentTime = SDL_GetTicks64();
 
-			std::cout << std::endl << "[" << std::setw(20) << frameCount++ << "]" << std::endl;
+			//std::cout << "[" << std::setw(20) << frameCount++ << "]\r";
 
 			// MARK: Events handling
 			if (SDL_PollEvent(&event) > 0) {
@@ -395,12 +371,13 @@ int main() {
 			TextureView textureView = std::move(GetNextTexture(device.Handle(), surface.Handle()));
 
 			time = static_cast<float>(currentTime) / 1000.0f;
-			cameraPosition = Math::Vector3(std::cos(time * 0.1f), std::sin(time * 0.1f), 0.0f);
-			view = Math::Matrix4x4::Transpose(Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 0.0f, 1.0f)));
+			cameraPosition = Math::Vector3(std::cos(-time * 0.2) * 5.0f, 0.0f, std::sin(-time * 0.2) * 5.0f);
+			view = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 1.0f, 0.0f));
+
 			viewProjection = projection * view;
 
-			uniforms.viewDirectionProjectionInverse = Math::Matrix4x4::Inverse(viewProjection);
-			//queue->writeBuffer(uniformBuffer.Handle(), 0, &uniforms, sizeof(MyUniforms));
+			uniforms.viewDirectionProjectionInverse = Math::Matrix4x4::Transpose(Math::Matrix4x4::Inverse(viewProjection));
+			queue->writeBuffer(uniformBuffer.Handle(), 0, &uniforms, sizeof(MyUniforms));
 			
 			// MARK: Render
 			CommandEncoderDescriptor commandEncoderDescriptor;

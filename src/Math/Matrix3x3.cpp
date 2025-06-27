@@ -97,7 +97,7 @@ namespace Math {
 
     std::ostream& operator << (std::ostream& out, Matrix3x3 const& m) {
         for (int i = 0; i < 9; i++) {
-            out << std::setprecision(2) << std::fixed << ((i != 0 && i % 3 == 0) ? "\n" : "") << m[i] << " ";
+            out << std::setprecision(4) << std::fixed << ((i != 0 && i % 3 == 0) ? "\n" : "") << m[i] << " ";
         }
 
         return out;
@@ -190,6 +190,12 @@ namespace Math {
         return lhs;
     }
 
+    float Matrix3x3::Determinant(Matrix3x3 const& m) {
+        return m(0, 0) * Matrix2x2::Determinant(m.Submatrix(0, 0)) -
+               m(0, 1) * Matrix2x2::Determinant(m.Submatrix(0, 1)) +
+               m(0, 2) * Matrix2x2::Determinant(m.Submatrix(0, 2));
+    }
+
     Matrix3x3 Matrix3x3::Identity() {
         return Matrix3x3(1.0f);
     }
@@ -260,11 +266,21 @@ namespace Math {
     }
 
     Matrix3x3 Matrix3x3::Inverse(Matrix3x3 const& m) {
+        float det = Determinant(m);
+        assert("Matrix is not invertible"
+               && det != 0.0f);
 
+        return Transpose(m.CofactorMatrix()) / det;
     }
 
     Matrix3x3&  Matrix3x3::Transposed() {
         *this = Transpose(*this);
+
+        return *this;
+    }
+
+    Matrix3x3& Matrix3x3::Inversed() {
+        _elements = Inverse(*this)._elements;
 
         return *this;
     }
@@ -287,5 +303,44 @@ namespace Math {
             (*this)(1, m),
             (*this)(2, m)
         );
+    }
+
+    Matrix2x2 Matrix3x3::Submatrix(size_t i, size_t j) const {
+        assert("Indices must be in the bounds of the matrix"
+               && i >= 0 && i < 3
+               && j >= 0 && j < 3);
+
+        Matrix2x2 sub;
+        size_t index = 0;
+
+        for (size_t row = 0; row < 3; ++row) {
+            if (row == i) continue;
+            for (size_t col = 0; col < 3; ++col) {
+                if (col == j) continue;
+                sub[index++] = (*this)(row, col);
+            }
+        }
+
+        return sub;
+    }
+
+    float Matrix3x3::Cofactor(size_t i, size_t j) const {
+        assert("Indices must be in the bounds of the matrix"
+               && i >= 0 && i < 3
+               && j >= 0 && j < 3);
+
+        return ((i + j) % 2 == 0 ? 1.0f : -1.0f) * Matrix2x2::Determinant(Submatrix(i, j));
+    }
+
+    Matrix3x3 Matrix3x3::CofactorMatrix() const {
+        Matrix3x3 cofactor;
+
+        for (size_t i = 0; i < 3; ++i) {
+            for (size_t j = 0; j < 3; ++j) {
+                cofactor(i, j) = Cofactor(i, j);
+            }
+        }
+
+        return cofactor;
     }
 }
