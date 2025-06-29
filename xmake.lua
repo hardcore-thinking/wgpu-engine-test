@@ -59,12 +59,14 @@ package_end()
 set_languages("cxx20")
 add_requires("sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb", "snitch")
 add_requires("wgpu-native v24.0.0+1", "libsdl2")
+add_requires("imgui", {configs = {sdl2 = true, webgpu = true}})
 
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("plugin.vsxmake.autoupdate")
 target("wgpu-test")
     set_kind("binary")
     add_packages("wgpu-native", "libsdl2", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
+    add_packages("imgui")
 
     set_warnings("error")
 
@@ -84,7 +86,7 @@ target("wgpu-test")
     add_extrafiles("xmake.lua")
     add_extrafiles("resources/**")
 
-    set_rundir(".")
+    set_rundir("./")
     add_installfiles("resources/**")
 target_end()
 

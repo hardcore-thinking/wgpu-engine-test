@@ -45,25 +45,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_LEFT_HANDED
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-
-std::ostream& operator << (std::ostream& out, glm::mat4 const& m) {
-	out << std::fixed << std::setprecision(4);
-	for (size_t i = 0; i < 4; ++i) {
-		for (size_t j = 0; j < 4; ++j) {
-			out << m[i][j] << " ";
-		}
-		out << std::endl;
-	}
-	return out;
-}
-
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
-constexpr float windowWidth = 853.0f;
+constexpr float windowWidth = 1138.0f;
 constexpr float windowHeight = 640.0f;
 
 struct MyUniforms {
@@ -81,35 +65,11 @@ auto UncapturedErrorCallback = [](wgpu::Device const* device, wgpu::ErrorType ty
 	std::cerr << "[Uncaptured error] (" << type << "): " << message << std::endl;
 };
 
-void LogCallback(WGPULogLevel level, WGPUStringView message, void* userData) {
-	switch (level) {
-		case wgpu::LogLevel::Error:
-			std::cerr << "[Error] " << message.data << std::endl;
-			break;
-
-		case wgpu::LogLevel::Warn:
-			std::cerr << "[Warning] " << message.data << std::endl;
-			break;
-
-		case wgpu::LogLevel::Info:
-			std::cout << "[Info] " << message.data << std::endl;
-			break;
-
-		case wgpu::LogLevel::Debug:
-			std::cout << "[Debug] " << message.data << std::endl;
-			break;
-
-		default:
-			std::cout << "[Unknown] " << message.data << std::endl;
-			break;
-	}
-}
-
 bool running = false;
 
-static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& surface) {
+static wgpu::TextureView GetNextTexture(Window& window, Adapter& adapter, Device& device, CompatibleSurface& surface) {
 	wgpu::SurfaceTexture surfaceTexture {};
-	surface.getCurrentTexture(&surfaceTexture);
+	surface->getCurrentTexture(&surfaceTexture);
 
 	//std::cout << "Surface texture: ";
 	switch (surfaceTexture.status) {
@@ -137,6 +97,8 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 			std::cerr << "Success suboptimal" << std::endl;
 			// Note: This can happen if the surface is resized or the window is minimized.
 			// You may want to handle this case by reconfiguring the surface.
+			surface->unconfigure();
+			surface.Configure(adapter, device, window);
 			break;
 
 		case wgpu::SurfaceGetCurrentTextureStatus::Timeout:
@@ -165,8 +127,6 @@ static wgpu::TextureView GetNextTexture(wgpu::Device& device, wgpu::Surface& sur
 	return textureView;
 }
 
-WGPULogCallback logCallbackHandle = LogCallback;
-
 int main() {
 	try {
 		// MARK: Main instances
@@ -192,9 +152,6 @@ int main() {
 		DeviceDescriptor deviceDescriptor(adapter, limits, deviceLostCallbackInfo, uncapturedErrorCallbackInfo);
 		Device device(adapter, deviceDescriptor);
 		Queue queue(device);
-
-		const char* test = "test";
-		//wgpuSetLogCallback(logCallbackHandle, &test);
 		
 		surface.Configure(adapter, device, window);
 
@@ -237,8 +194,8 @@ int main() {
 			Extent3D(windowWidth, windowHeight, 6)
 		);
 
-		textureDescriptor.size.width = 2048;
-		textureDescriptor.size.height = 2048;
+		textureDescriptor.size.width = 4096;
+		textureDescriptor.size.height = 4096;
 		textureDescriptor.size.depthOrArrayLayers = 6;
 
 		TextureViewDescriptor textureViewDescriptor(
@@ -252,12 +209,12 @@ int main() {
 		//Texture2D texture("resources/futuristic.png", device, queue, textureDescriptor, textureViewDescriptor);
 
 		Cubemap skyboxCubemap({
-			"resources/pos-x.jpg",
-			"resources/neg-x.jpg",
-			"resources/pos-y.jpg",
-			"resources/neg-y.jpg",
-			"resources/pos-z.jpg",
-			"resources/neg-z.jpg"
+			"resources/stars_px.jpg",
+			"resources/stars_nx.jpg",
+			"resources/stars_py.jpg",
+			"resources/stars_ny.jpg",
+			"resources/stars_pz.jpg",
+			"resources/stars_nz.jpg"
 		}, device, queue, textureDescriptor, textureViewDescriptor);
 
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
@@ -314,16 +271,19 @@ int main() {
 
 		RenderPipelineDescriptor cubeRenderPipelineDescriptor(depthStencilState, primitiveState, multisampleState, vertexState, fragmentState, pipelineLayout);
 		RenderPipeline cubeRenderPipeline(device, cubeRenderPipelineDescriptor);
-	
+
+		float angleX = 0.0f;
+		float angleZ = 0.0f;
+		Math::Matrix4x4 view = Math::Matrix4x4::Identity();
+
 		float time = 0.0f;
 
 		// MARK: Uniforms initialization
-		Math::Vector3 cameraPosition(std::cos(time * 0.2), std::sin(time * 0.2), 0.0f);
-		Math::Matrix4x4 view = Math::Matrix4x4::LookAt(
-			cameraPosition,
-			Math::Vector3( 0.0f,  0.0f, 0.0f),
-			Math::Vector3( 0.0f,  1.0f, 0.0f)
-		);
+		//Math::Matrix4x4 view = Math::Matrix4x4::LookAt(
+		//	cameraPosition,
+		//	Math::Vector3( 0.0f,  0.0f, 0.0f),
+		//	Math::Vector3( 0.0f,  1.0f, 0.0f)
+		//);
 
 		float ratio = windowWidth / windowHeight;
 		float vfov = 60.0f * PI / 180.0f;
@@ -343,36 +303,68 @@ int main() {
 		running = true;
 		uint64_t frameCount = 0;
 
+		SDL_WarpMouseInWindow(window.Handle(), static_cast<int>(windowWidth / 2), static_cast<int>(windowHeight / 2));
+		SDL_SetRelativeMouseMode(SDL_TRUE);
+
+		double sensitivity = 0.005f; // Adjust sensitivity as needed
+
 		// MARK: Main loop
 		SDL_Event event {};
 		while (running) {
-			static Uint64 currentTime = 0ULL;
-
-			currentTime = SDL_GetTicks64();
+			static double deltaTime = 0.0;
+			static Uint64 frameBegin = 0ULL;
+			static Uint64 frameEnd = 0ULL;
+			frameBegin = SDL_GetTicks64();
 
 			//std::cout << "[" << std::setw(20) << frameCount++ << "]\r";
 
 			// MARK: Events handling
-			if (SDL_PollEvent(&event) > 0) {
-				if (event.type == SDL_QUIT) {
+			while (SDL_PollEvent(&event) > 0) {
+				if (event.type == SDL_QUIT || keyboard[SDL_SCANCODE_ESCAPE]) {
 					running = false;
 				}
 
-				if (keyboard[SDL_SCANCODE_Z]) {
-					cameraPosition.y += 0.01f;
+				if (keyboard[SDL_SCANCODE_F11]) {
+					if (SDL_GetWindowFlags(window.Handle()) & SDL_WINDOW_FULLSCREEN) {
+						SDL_SetWindowFullscreen(window.Handle(), 0);
+					} else {
+						SDL_SetWindowFullscreen(window.Handle(), SDL_WINDOW_FULLSCREEN_DESKTOP);
+					}
 				}
 
-				if (keyboard[SDL_SCANCODE_S]) {
-					cameraPosition.y -= 0.01f;
+				if (event.type == SDL_MOUSEMOTION) {
+					if (angleX - event.motion.yrel * sensitivity > PI / 2.0f) {
+						angleX = PI / 2.0f;
+					}
+					
+					else if (angleX - event.motion.yrel * sensitivity < -PI / 2.0f) {
+						angleX = -PI / 2.0f;
+					}
+					
+					else {
+						angleX -= event.motion.yrel * sensitivity; // Adjust sensitivity as needed
+					}
+
+					if (angleZ - event.motion.xrel * sensitivity > PI) {
+						angleZ -= 2.0f * PI;
+					}
+					
+					else if (angleZ - event.motion.xrel * sensitivity < -PI) {
+						angleZ += 2.0f * PI;
+					}
+					
+					else {
+						angleZ -= event.motion.xrel * sensitivity; // Adjust sensitivity as needed
+					}
 				}
 			}
 
 			// MARK: Update	
-			TextureView textureView = std::move(GetNextTexture(device.Handle(), surface.Handle()));
+			view = Math::Matrix4x4(Math::Matrix4x4::RotateX(angleX) * Math::Matrix4x4::RotateY(angleZ));
 
-			time = static_cast<float>(currentTime) / 1000.0f;
-			cameraPosition = Math::Vector3(std::cos(-time * 0.2) * 5.0f, 0.0f, std::sin(-time * 0.2) * 5.0f);
-			view = Math::Matrix4x4::LookAt(cameraPosition, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 1.0f, 0.0f));
+			TextureView textureView = std::move(GetNextTexture(window, adapter, device, surface));
+
+			time = static_cast<float>(frameBegin) / 1000.0f;
 
 			viewProjection = projection * view;
 
@@ -406,6 +398,8 @@ int main() {
 			queue->submit(commandBuffer.Handle());
 
 			surface->present();
+			
+			frameEnd = SDL_GetTicks64();
 		}
 	}
 
