@@ -3,19 +3,26 @@ set_warnings("all", "error")
 set_languages("cxx17")
 set_optimize("fastest")
 
+add_requireconfs("wgpu-native", "**.wgpu-native", { version = "v24.0.0+1", override = true })
+
 package("wgpu-native-cpp")
+    set_kind("library", { headeronly = true })
+
     set_homepage("https://github.com/eliemichel/WebGPU-Cpp.git")
     set_description("CMake files that provide WebGPU for native and web development, easy-to-integrate and unified across implementations.")
     set_license("MIT")
     
     set_urls("https://github.com/eliemichel/WebGPU-Cpp.git")
-    add_versions("2025.05.08", "3938273103e69a5af3288196deccc48774d955f3")
+    add_versions("2025.06.04", "f72670b327c394a0197536ba8c389ce08ecf560d")
     
-    add_deps("wgpu-native")
+    add_deps("wgpu-native", "python 3.13.2")
 
     on_install(function (package)
+        -- local headerPath = path.join(package:dep("wgpu-native"):installdir("include/webgpu"), "webgpu.h")
+        -- print(headerPath)
+        -- assert(os.exists(headerPath))
+        -- os.execv("python generate.py", { "--use-init-macros", "-u", headerPath, "--template", "webgpu.template.hpp" })
         os.vcp("wgpu-native/webgpu.hpp", package:installdir("include", "wgpu-native"))
-        os.vcp("wgpu-native/wgpu.h", package:installdir("include", "wgpu-native", "webgpu"))
     end)
     
     on_test(function (package)
@@ -23,50 +30,30 @@ package("wgpu-native-cpp")
     end)
 package_end()
 
-package("sdl2webgpu")
-    set_homepage("https://github.com/eliemichel/sdl2webgpu.git")
-    set_description("An extension for the SDL2 library for using WebGPU native.")
-    set_license("MIT")
-
-    add_urls("https://github.com/eliemichel/sdl2webgpu.git")
-    add_versions("2025-04-18", "eda8bedcb78a755f42c5efa00b732c62e89c23cb")
-    --add_versions("2024-10-16", "860a0444aff94d82e9cd96ea9085a7e4fefce55d")
-    
-    add_deps("libsdl2", "wgpu-native")
-
-    on_install(function (package)
-        io.writefile("xmake.lua", [[
-            add_rules("mode.debug", "mode.release")
-            set_languages("cxx17")
-            add_requires("libsdl2", "wgpu-native")
-            target("sdl2wgpu")
-                add_packages("libsdl2", "wgpu-native")
-                set_kind("$(kind)")
-                add_files("sdl2webgpu.c")
-                add_headerfiles("sdl2webgpu.h")
-            target_end()
-        ]])
-        os.vcp("sdl2webgpu.h", package:installdir("include"))
-        
-        import("package.tools.xmake").install(package)
-    end)
-
-    on_test(function (package)
-        assert(package:has_cfuncs("SDL_GetWGPUSurface", {includes = "sdl2webgpu.h", configs = {defines = "SDL_MAIN_HANDLED"}}))
-    end)
-package_end()
-
 set_languages("cxx20")
-add_requires("sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb", "snitch")
-add_requires("wgpu-native v24.0.0+1", "libsdl2")
-add_requires("imgui", {configs = {sdl2 = true, webgpu = true}})
+add_requires("sdl2webgpu", "wgpu-native-cpp", "tinyobjloader", "stb")
+add_requires("wgpu-native 2025.06.04")
+add_requires("libsdl2", { configs = { wayland = true, shared = true } })
+add_requireconfs("sdl2webgpu.libsdl2", { configs = { shared = true } })
+-- add_requires("imgui", { configs = { sdl2 = true, webgpu = true } })
 
-add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
-add_rules("plugin.vsxmake.autoupdate")
+add_rules("plugin.compile_commands.autoupdate", { outputdir = ".vscode" })
 target("wgpu-test")
     set_kind("binary")
-    add_packages("wgpu-native", "libsdl2", "sdl2webgpu", "wgpu-native-cpp", "glm", "tinyobjloader", "stb")
-    add_packages("imgui")
+
+    if is_plat("linux") then end -- TODO
+    if is_plat("windows") then end -- TODO
+    if is_plat("macosx") then end -- TODO
+
+    if is_mode("debug") then
+        add_cxxflags("-fsanitize=address,undefined", {force = true})
+        add_ldflags("-fsanitize=address,undefined", {force = true})
+        add_cxxflags("-fno-omit-frame-pointer", {force = true})
+    end
+
+    add_packages("wgpu-native", "libsdl2", "sdl2webgpu") 
+    add_packages("wgpu-native-cpp", "tinyobjloader", "stb")
+    -- add_packages("imgui")
 
     set_warnings("error")
 
@@ -88,22 +75,4 @@ target("wgpu-test")
 
     set_rundir("./")
     add_installfiles("resources/**")
-target_end()
-
-target("vector2-tests")
-    set_kind("binary")
-
-    set_default(false)
-    add_packages("snitch")
-
-    set_runargs("-v", "full", "*")
-
-    add_files("tests/Vector2.test.cpp")
-    add_files("src/Math/Vector2.cpp")
-    add_headerfiles("inc/Math/Vector2.hpp")
-    add_tests("tests-vector2")
-
-    add_includedirs("inc")
-
-    set_warnings("error")
 target_end()
