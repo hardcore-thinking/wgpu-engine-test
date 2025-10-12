@@ -3,11 +3,11 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 #include <wgpu-native/webgpu.hpp>
 
 #include <SDL2/SDL.h>
-#include <sdl2webgpu.h>
 
 #include <Window.hpp>
 #include <Helper/Instance.hpp>
@@ -16,8 +16,8 @@
 class Adapter {
     public:
         Adapter() = delete;
-        Adapter(Instance& instance, Window const& window, Surface& surface);
-        Adapter(Instance& instance, Window const& window, wgpu::RequestAdapterOptions const& options);
+        Adapter(Instance& instance, Surface& surface);
+        Adapter(Instance& instance, wgpu::RequestAdapterOptions const& options);
         ~Adapter();
 
     public:
@@ -27,12 +27,13 @@ class Adapter {
         wgpu::SupportedFeatures const& Features() const { return _features; }
         wgpu::AdapterInfo const& Infos() const { return _infos; }
         wgpu::Limits const& Limits() const { return _limits; }
-        void DisplayFeatures() const;
-        void DisplayInfos() const;
-        void DisplayLimits() const;
 
         wgpu::Adapter* operator->();
 
+        void DisplayFeatures() const;
+        void DisplayInfos() const;
+        void DisplayLimits() const;
+        
     private:
         wgpu::Adapter _handle = nullptr;
         wgpu::SupportedFeatures _features {};

@@ -17,8 +17,6 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-#include <wgpu-native/webgpu/wgpu.h>
-
 #include <sdl2webgpu.h>
 
 #include <Window.hpp>
@@ -139,9 +137,18 @@ int main() {
 			.h = static_cast<int>(windowHeight),
 			.flags = SDL_WINDOW_SHOWN
 		};
+
+		if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+			std::cerr << "Can't initialize SDL2: " << SDL_GetError() << std::endl;
+		}
+
+		std::clog << "Current video driver: " << SDL_GetCurrentVideoDriver() << std::endl;
+
 		Window window(windowCreationInfo);
 		CompatibleSurface surface(instance, window);
-		Adapter adapter(instance, window, surface);
+		Adapter adapter(instance, surface);
+
+		adapter.DisplayInfos();
 
 		Limits limits(adapter);
 		limits.maxBufferSize = 150000 * sizeof(VertexAttributes);
@@ -152,7 +159,6 @@ int main() {
 		DeviceDescriptor deviceDescriptor(adapter, limits, deviceLostCallbackInfo, uncapturedErrorCallbackInfo);
 		Device device(adapter, deviceDescriptor);
 		Queue queue(device);
-		
 		surface.Configure(adapter, device, window);
 
 		std::vector<VertexAttributes> vertexData {};
@@ -322,7 +328,7 @@ int main() {
 			while (SDL_PollEvent(&event) > 0) {
 				if (event.type == SDL_QUIT || keyboard[SDL_SCANCODE_ESCAPE]) {
 					running = false;
-				}
+				}}
 
 				if (keyboard[SDL_SCANCODE_F11]) {
 					if (SDL_GetWindowFlags(window.Handle()) & SDL_WINDOW_FULLSCREEN) {
@@ -409,5 +415,8 @@ int main() {
 	}
 
 	logger.Info("Successfully exited.");
+
+	SDL_Quit();
+
 	return EXIT_SUCCESS;
 }

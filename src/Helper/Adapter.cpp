@@ -1,11 +1,11 @@
 #include <Helper/Adapter.hpp>
 
-Adapter::Adapter(Instance& instance, Window const& window, Surface& surface) {
+Adapter::Adapter(Instance& instance, Surface& surface) {
     wgpu::RequestAdapterOptions options {};
     options.compatibleSurface = surface.Handle();
-    //options.powerPreference = wgpu::PowerPreference::HighPerformance;
+    options.powerPreference = wgpu::PowerPreference::HighPerformance;
 	options.powerPreference = wgpu::PowerPreference::LowPower;
-	options.nextInChain = nullptr;
+	//options.nextInChain = nullptr;
     options.forceFallbackAdapter = false;
     options.featureLevel = wgpu::FeatureLevel::Compatibility;
 
@@ -14,14 +14,14 @@ Adapter::Adapter(Instance& instance, Window const& window, Surface& surface) {
         throw std::runtime_error("Failed to create WGPU adapter");
     }
 
-    //std::cout << "Adapter created successfully: " << Handle() << std::endl;
+    std::cout << "Adapter created successfully: " << Handle() << std::endl;
 
     _handle.getFeatures(&_features);
     _handle.getInfo(&_infos);
     _handle.getLimits(&_limits);
 }
 
-Adapter::Adapter(Instance& instance, Window const& window, wgpu::RequestAdapterOptions const& options) {
+Adapter::Adapter(Instance& instance, wgpu::RequestAdapterOptions const& options) {
     _handle = instance->requestAdapter(options);
     if (_handle == nullptr) {
         throw std::runtime_error("Failed to create WGPU adapter");
