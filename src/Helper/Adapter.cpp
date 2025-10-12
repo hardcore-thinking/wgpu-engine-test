@@ -3,9 +3,9 @@
 Adapter::Adapter(Instance& instance, Surface& surface) {
     wgpu::RequestAdapterOptions options {};
     options.compatibleSurface = surface.Handle();
-    options.powerPreference = wgpu::PowerPreference::HighPerformance;
+    //options.powerPreference = wgpu::PowerPreference::HighPerformance;
 	options.powerPreference = wgpu::PowerPreference::LowPower;
-	//options.nextInChain = nullptr;
+	options.nextInChain = nullptr;
     options.forceFallbackAdapter = false;
     options.featureLevel = wgpu::FeatureLevel::Compatibility;
 
@@ -49,7 +49,7 @@ wgpu::Adapter* Adapter::operator->() {
 
 void Adapter::DisplayFeatures() const {
 	std::cout << "\t - " << "Features (found " << _features.featureCount << "):" << std::endl;
-	for (int i = 0; i < _features.featureCount; ++i) {
+	for (size_t i = 0; i < _features.featureCount; ++i) {
 		wgpu::FeatureName feature = _features.features[i];
 		switch (feature) {
 			case wgpu::FeatureName::BGRA8UnormStorage:
@@ -188,7 +188,7 @@ void Adapter::DisplayInfos() const {
 	}
 
 	std::cout << "\t\t" << "Device ID: " << _infos.deviceID << std::endl;
-	std::cout << "\t\t" << "Driver description: " << _infos.description.data << std::endl;
+	std::cout << "\t\t" << "Driver description: " << _infos.description.data[0] << std::endl;
 	std::cout << "\t\t" << "Name: " << _infos.device.data << std::endl;
 	std::cout << "\t\t" << "Vendor ID: " << _infos.vendorID << std::endl;
 	std::cout << "\t\t" << "Vendor name: " << _infos.vendor.data << std::endl;

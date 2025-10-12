@@ -282,7 +282,7 @@ int main() {
 		float angleZ = 0.0f;
 		Math::Matrix4x4 view = Math::Matrix4x4::Identity();
 
-		float time = 0.0f;
+		//float time = 0.0f;
 
 		// MARK: Uniforms initialization
 		//Math::Matrix4x4 view = Math::Matrix4x4::LookAt(
@@ -307,7 +307,7 @@ int main() {
 		Uint8 const* keyboard = SDL_GetKeyboardState(nullptr);
 
 		running = true;
-		uint64_t frameCount = 0;
+		//uint64_t frameCount = 0;
 
 		SDL_WarpMouseInWindow(window.Handle(), static_cast<int>(windowWidth / 2), static_cast<int>(windowHeight / 2));
 		SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -316,11 +316,8 @@ int main() {
 
 		// MARK: Main loop
 		SDL_Event event {};
-		while (running) {
-			static double deltaTime = 0.0;
-			static Uint64 frameBegin = 0ULL;
-			static Uint64 frameEnd = 0ULL;
-			frameBegin = SDL_GetTicks64();
+		while (running) {			
+			//frameBegin = SDL_GetTicks64();
 
 			//std::cout << "[" << std::setw(20) << frameCount++ << "]\r";
 
@@ -328,7 +325,7 @@ int main() {
 			while (SDL_PollEvent(&event) > 0) {
 				if (event.type == SDL_QUIT || keyboard[SDL_SCANCODE_ESCAPE]) {
 					running = false;
-				}}
+				}
 
 				if (keyboard[SDL_SCANCODE_F11]) {
 					if (SDL_GetWindowFlags(window.Handle()) & SDL_WINDOW_FULLSCREEN) {
@@ -370,7 +367,7 @@ int main() {
 
 			TextureView textureView = std::move(GetNextTexture(window, adapter, device, surface));
 
-			time = static_cast<float>(frameBegin) / 1000.0f;
+			//time = static_cast<float>(frameBegin) / 1000.0f;
 
 			viewProjection = projection * view;
 
@@ -405,7 +402,7 @@ int main() {
 
 			surface->present();
 			
-			frameEnd = SDL_GetTicks64();
+			//frameEnd = SDL_GetTicks64();
 		}
 	}
 
@@ -420,3 +417,4 @@ int main() {
 
 	return EXIT_SUCCESS;
 }
+
