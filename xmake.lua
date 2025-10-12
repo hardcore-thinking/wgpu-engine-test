@@ -53,7 +53,7 @@ target("wgpu-test")
 
     add_packages("wgpu-native", "libsdl2", "sdl2webgpu") 
     add_packages("wgpu-native-cpp", "tinyobjloader", "stb")
-    -- add_packages("imgui")
+    add_packages("imgui")
 
     set_warnings("error")
 
