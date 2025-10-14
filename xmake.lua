@@ -31,7 +31,7 @@ package_end()
 
 set_languages("cxx20")
 add_requires("libsdl2")
-add_requireconfs("libsdl2", { configs = { wayland = true, shared = true } })
+add_requireconfs("libsdl2", { configs = { wayland = true, shared = true, x11 = true, with_x = true } })
 add_requires("sdl2webgpu", "wgpu-native-cpp", "tinyobjloader", "stb")
 add_requires("wgpu-native 2025.06.04")
 add_requireconfs("sdl2webgpu.libsdl2", { configs = { shared = true } })
@@ -48,6 +48,7 @@ target("wgpu-test")
 
     if is_mode("debug") then
         add_cxxflags("-fsanitize=address,undefined", {force = true})
+        -- add_cxxflags("-fanalyzer", {force = true})
         add_ldflags("-fsanitize=address,undefined", {force = true})
         add_cxxflags("-fno-omit-frame-pointer", {force = true})
     end

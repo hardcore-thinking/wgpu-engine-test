@@ -143,6 +143,7 @@ int main() {
 		}
 
 		std::clog << "Current video driver: " << SDL_GetCurrentVideoDriver() << std::endl;
+		std::clog << SDL_GetError() << std::endl;
 
 		Window window(windowCreationInfo);
 		CompatibleSurface surface(instance, window);
@@ -316,7 +317,14 @@ int main() {
 
 		// MARK: Main loop
 		SDL_Event event {};
-		while (running) {			
+		while (running) {
+			queue->onSubmittedWorkDone(wgpu::CallbackMode::AllowSpontaneous, [](WGPUQueueWorkDoneStatus status) {
+			static int i = 0;
+			i++;
+			std::cout << "Job completed: " << i << std::endl;
+			});
+    		queue->submit(0, nullptr); // Submitting nothing just to check for ongoing asynchronous operations and call their callbacks if needed
+
 			//frameBegin = SDL_GetTicks64();
 
 			//std::cout << "[" << std::setw(20) << frameCount++ << "]\r";
