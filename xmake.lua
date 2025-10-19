@@ -1,8 +1,8 @@
 add_rules("mode.debug", "mode.release", "mode.coverage")
-set_warnings("all", "error")
+set_warnings("extra", "all", "error")
 set_optimize("fastest")
 
-add_requireconfs("wgpu-native", "**.wgpu-native", { version = "v25.0.2+1", override = true })
+add_requireconfs("wgpu-native", "**.wgpu-native", { version = "v27.0.2+0", override = true })
 
 package("wgpu-native-cpp")
     set_kind("library", { headeronly = true })
@@ -12,6 +12,7 @@ package("wgpu-native-cpp")
     set_license("MIT")
     
     set_urls("https://github.com/eliemichel/WebGPU-Cpp.git")
+    add_versions("2025.09.03", "b9507d9753960e6ca0adabd7e91c97d8c8f6e2de")
     add_versions("2025.06.04", "f72670b327c394a0197536ba8c389ce08ecf560d")
     
     add_deps("wgpu-native", "python 3.13.2")
@@ -30,13 +31,16 @@ package("wgpu-native-cpp")
 package_end()
 
 set_languages("cxx20")
-add_requires("libsdl2")
-add_requireconfs("libsdl2", { configs = { wayland = true, shared = true, x11 = true, with_x = true } })
-add_requires("sdl2webgpu", "wgpu-native-cpp", "tinyobjloader", "stb")
-add_requires("wgpu-native 2025.06.04")
-add_requireconfs("sdl2webgpu.libsdl2", { configs = { shared = true } })
-add_requires("imgui", { configs = { sdl2 = true, webgpu = true } })
-add_requireconfs("imgui.libsdl2", { configs = { shared = true} })
+
+add_requireconfs("**", { system = false }) -- forces to install packages even if they are in the system installed packages
+
+add_requires("libsdl3", { configs = { wayland = true, x11 = true, shared = true } })
+
+add_requires("sdl3webgpu", "wgpu-native-cpp", "tinyobjloader", "stb")
+add_requireconfs("sdl3webgpu.libsdl3", { configs = { wayland = true, x11 = true, shared = true } })
+add_requires("wgpu-native 2025.09.03")
+add_requires("imgui", { configs = { sdl3 = true, wgpu = true, wgpu_backend = wgpu } })
+add_requireconfs("imgui.libsdl3", { configs = { wayland = true, x11 = true, shared = true } })
 
 add_rules("plugin.compile_commands.autoupdate", { outputdir = ".vscode" })
 target("wgpu-test")
@@ -46,14 +50,17 @@ target("wgpu-test")
     if is_plat("windows") then end -- TODO
     if is_plat("macosx") then end -- TODO
 
+    add_cxxflags("-pedantic", "-pedantic-errors")
+
     if is_mode("debug") then
+        set_optimize("none")
         add_cxxflags("-fsanitize=address,undefined", {force = true})
         -- add_cxxflags("-fanalyzer", {force = true})
         add_ldflags("-fsanitize=address,undefined", {force = true})
         add_cxxflags("-fno-omit-frame-pointer", {force = true})
     end
 
-    add_packages("wgpu-native", "libsdl2", "sdl2webgpu") 
+    add_packages("wgpu-native", "libsdl3", "sdl3webgpu") 
     add_packages("wgpu-native-cpp", "tinyobjloader", "stb")
     add_packages("imgui")
 

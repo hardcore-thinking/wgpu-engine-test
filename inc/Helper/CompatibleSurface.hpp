@@ -6,8 +6,8 @@
 
 #include <wgpu-native/webgpu.hpp>
 
-#include <SDL2/SDL.h>
-#include <sdl2webgpu.h>
+#include <SDL3/SDL.h>
+#include <sdl3webgpu.h>
 
 #include <Window.hpp>
 #include <Helper/Instance.hpp>
@@ -15,14 +15,15 @@
 #include <Helper/Device.hpp>
 #include <Helper/Surface.hpp>
 
-class CompatibleSurface : public Surface {
-    public:
-        CompatibleSurface() = default;
-        CompatibleSurface(Instance const& instance, Window& window);
-        ~CompatibleSurface();
+class CompatibleSurface : public Surface
+{
+public:
+    CompatibleSurface() = default;
+    CompatibleSurface(Instance const &instance, Window &window);
+    ~CompatibleSurface();
 
-    public:
-        void Configure(Adapter& adapter, Device& device, Window& window);
+public:
+    void Configure(Adapter &adapter, Device &device, Window &window);
 };
 
 #endif // COMPATIBLESURFACE_HPP

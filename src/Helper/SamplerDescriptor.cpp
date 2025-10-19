@@ -1,7 +1,11 @@
 #include <Helper/SamplerDescriptor.hpp>
 
-SamplerDescriptor::SamplerDescriptor(float samplerLodMinClamp, float samplerLodMaxClamp) {
-    addressModeU = wgpu::AddressMode::Repeat;
+SamplerDescriptor::SamplerDescriptor(float samplerLodMinClamp, float samplerLodMaxClamp)
+{
+	(void)samplerLodMinClamp;
+	(void)samplerLodMaxClamp;
+
+	addressModeU = wgpu::AddressMode::Repeat;
 	addressModeV = wgpu::AddressMode::Repeat;
 	addressModeW = wgpu::AddressMode::ClampToEdge;
 	magFilter = wgpu::FilterMode::Linear;
