@@ -12,6 +12,7 @@
 #include <Window.hpp>
 #include <Helper/Instance.hpp>
 #include <Helper/Surface.hpp>
+#include <Utils/StringView.hpp>
 
 class Adapter
 {

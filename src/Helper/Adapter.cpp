@@ -201,10 +201,10 @@ void Adapter::DisplayInfos() const
 	}
 
 	std::cout << "\t\t" << "Device ID: " << _infos.deviceID << std::endl;
-	std::cout << "\t\t" << "Driver description: " << _infos.description.data[0] << std::endl;
-	std::cout << "\t\t" << "Name: " << _infos.device.data[0] << std::endl;
+	std::cout << "\t\t" << "Driver description: " << Utils::StrViewRepr(_infos.description) << std::endl;
+	std::cout << "\t\t" << "Name: " << Utils::StrViewRepr(_infos.device) << std::endl;
 	std::cout << "\t\t" << "Vendor ID: " << _infos.vendorID << std::endl;
-	std::cout << "\t\t" << "Vendor name: " << _infos.vendor.data[0] << std::endl;
+	std::cout << "\t\t" << "Vendor name: " << Utils::StrViewRepr(_infos.vendor) << std::endl;
 }
 
 void Adapter::DisplayLimits() const

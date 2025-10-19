@@ -41,6 +41,8 @@
 #include <Math/Vector3.hpp>
 #include <Math/Vector4.hpp>
 
+#include <Utils/StringView.hpp>
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
@@ -65,13 +67,13 @@ auto DeviceLostCallback = [](wgpu::Device const *device, wgpu::DeviceLostReason 
 {
 	(void)device;
 	(void)userData1;
-	std::cerr << "[Lost device] (" << reason << "): " << message << std::endl;
+	std::cerr << "[Lost device] (" << reason << "): " << Utils::StrViewRepr(message) << std::endl;
 };
 auto UncapturedErrorCallback = [](wgpu::Device const *device, wgpu::ErrorType type, wgpu::StringView message, void *userData1)
 {
 	(void)device;
 	(void)userData1;
-	std::cerr << "[Uncaptured error] (" << type << "): " << message << std::endl;
+	std::cerr << "[Uncaptured error] (" << type << "): " << Utils::StrViewRepr(message) << std::endl;
 };
 
 bool running = false;
@@ -167,20 +169,14 @@ int main()
 		auto logCallback = [](WGPULogLevel level, WGPUStringView message, void *userdata1)
 		{
 			std::string levelStr = (level == 1 ? "ERROR" : (level == 2 ? "WARN" : (level == 3 ? "INFO" : (level == 4 ? "DEBUG" : (level == 5 ? "TRACE" : "UNKNOWN")))));
-
-			// std::cout << "Size of message: " << message.length << std::endl;
-			std::cout << levelStr << " log: ";
-			for (int i = 0; i < (int)message.length; ++i)
-			{
-				std::cout << message.data[i];
-			}
-			// std::cout << level << " log: " << message.data[0] << (userdata1 ? ": " : "");
+			std::cout << levelStr << " log: " << Utils::StrViewRepr(message) << (userdata1 ? ": " : "");
 			if (userdata1)
 				std::cout << userdata1;
 			std::cout << std::endl;
 		};
 
-		(void)logCallback; // wgpuSetLogCallback(logCallback, nullptr);
+		//(void)logCallback;
+		wgpuSetLogCallback(logCallback, nullptr);
 
 		Window window(windowCreationInfo);
 		CompatibleSurface surface(instance, window);

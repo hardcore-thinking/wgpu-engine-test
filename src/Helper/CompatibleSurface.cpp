@@ -29,10 +29,8 @@ void CompatibleSurface::Configure(Adapter &adapter, Device &device, Window &wind
     wgpu::SurfaceCapabilities surfaceCapabilities;
     _handle.getCapabilities(adapter.Handle(), &surfaceCapabilities);
 
-    wgpu::TextureUsage
-
-        // SDL_DisplayMode displayMode = window.DisplayMode();
-        int width = 0;
+    // SDL_DisplayMode displayMode = window.DisplayMode();
+    int width = 0;
     int height = 0;
     SDL_GetWindowSize(window.Handle(), &width, &height);
 
