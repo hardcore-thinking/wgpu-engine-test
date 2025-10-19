@@ -6,7 +6,7 @@ Texture2D::Texture2D(std::filesystem::path const& path, Device& device, Queue& q
 	int channels = 0;
     unsigned char* data = nullptr;
 	try {
-        unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
+        data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
 	    if (data == nullptr) {
             throw std::runtime_error("Failed to load texture: " + path.string());
         }

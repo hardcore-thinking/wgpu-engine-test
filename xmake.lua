@@ -50,11 +50,13 @@ add_rules("plugin.compile_commands.autoupdate", { outputdir = ".vscode" })
 target("wgpu-test")
     set_kind("binary")
 
-    if is_plat("linux") then end -- TODO
+    if is_plat("linux") then
+        add_cxxflags("-pedantic", "-pedantic-errors")
+    end -- TODO
+    
     if is_plat("windows") then end -- TODO
+    
     if is_plat("macosx") then end -- TODO
-
-    add_cxxflags("-pedantic", "-pedantic-errors")
 
     if is_mode("debug") then
         set_optimize("none")

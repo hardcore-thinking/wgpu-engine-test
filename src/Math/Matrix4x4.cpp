@@ -393,7 +393,7 @@ namespace Math
         assert("Indices must be in the bounds of the matrix" && i >= 0 && i < 4 && j >= 0 && j < 4);
 
         Matrix3x3 sub;
-        size_t index = 0;
+        int index = 0;
 
         for (int row = 0; row < 4; ++row)
         {

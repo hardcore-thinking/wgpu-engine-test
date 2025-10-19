@@ -230,7 +230,7 @@ int main()
 		TextureDescriptor textureDescriptor(
 			wgpu::TextureFormat::RGBA8Unorm,
 			wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::TextureBinding,
-			Extent3D(windowWidth, windowHeight, 6));
+			Extent3D((int)windowWidth, (int)windowHeight, 6));
 
 		textureDescriptor.size.width = 4096;
 		textureDescriptor.size.height = 4096;
@@ -360,7 +360,7 @@ int main()
 			// std::cout << "[" << std::setw(20) << frameCount++ << "]\r";
 
 			// MARK: Events handling
-			while (SDL_PollEvent(&event) > 0)
+			while (SDL_PollEvent(&event))
 			{
 				if (event.type == SDL_EVENT_QUIT || keyboard[SDL_SCANCODE_ESCAPE])
 				{
@@ -369,34 +369,34 @@ int main()
 
 				if (event.type == SDL_EVENT_MOUSE_MOTION)
 				{
-					if (angleX - event.motion.yrel * sensitivity > PI / 2.0f)
+					if (angleX - event.motion.yrel * (float)sensitivity > PI / 2.0f)
 					{
 						angleX = PI / 2.0f;
 					}
 
-					else if (angleX - event.motion.yrel * sensitivity < -PI / 2.0f)
+					else if (angleX - event.motion.yrel * (float)sensitivity < -PI / 2.0f)
 					{
 						angleX = -PI / 2.0f;
 					}
 
 					else
 					{
-						angleX -= event.motion.yrel * sensitivity; // Adjust sensitivity as needed
+						angleX -= event.motion.yrel * (float)sensitivity; // Adjust sensitivity as needed
 					}
 
-					if (angleZ - event.motion.xrel * sensitivity > PI)
+					if (angleZ - event.motion.xrel * (float)sensitivity > PI)
 					{
 						angleZ -= 2.0f * PI;
 					}
 
-					else if (angleZ - event.motion.xrel * sensitivity < -PI)
+					else if (angleZ - event.motion.xrel * (float)sensitivity < -PI)
 					{
 						angleZ += 2.0f * PI;
 					}
 
 					else
 					{
-						angleZ -= event.motion.xrel * sensitivity; // Adjust sensitivity as needed
+						angleZ -= event.motion.xrel * (float)sensitivity; // Adjust sensitivity as needed
 					}
 				}
 			}

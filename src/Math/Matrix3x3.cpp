@@ -325,7 +325,7 @@ namespace Math
         assert("Indices must be in the bounds of the matrix" && i >= 0 && i < 3 && j >= 0 && j < 3);
 
         Matrix2x2 sub;
-        size_t index = 0;
+        int index = 0;
 
         for (int row = 0; row < 3; ++row)
         {

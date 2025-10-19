@@ -11,7 +11,7 @@ DeviceDescriptor::DeviceDescriptor(Adapter const &adapter, Limits const &limits,
     defaultQueueDescriptor.label = wgpu::StringView("default_queue_" + std::to_string(did));
     defaultQueueDescriptor.nextInChain = nullptr;
 
-    std::vector<wgpu::FeatureName> requiredFeatures{};
+    std::vector<wgpu::FeatureName> requiredDeviceFeatures{};
 
     wgpu::DeviceDescriptor deviceDescriptor = wgpu::Default;
     deviceDescriptor.defaultQueue = defaultQueueDescriptor;
@@ -23,8 +23,8 @@ DeviceDescriptor::DeviceDescriptor(Adapter const &adapter, Limits const &limits,
 
     deviceDescriptor.label = wgpu::StringView("device_" + std::to_string(did));
     deviceDescriptor.nextInChain = nullptr;
-    deviceDescriptor.requiredFeatureCount = requiredFeatures.size();
-    deviceDescriptor.requiredFeatures = (WGPUFeatureName *)(requiredFeatures.data());
+    deviceDescriptor.requiredFeatureCount = requiredDeviceFeatures.size();
+    deviceDescriptor.requiredFeatures = (WGPUFeatureName *)(requiredDeviceFeatures.data());
     deviceDescriptor.requiredLimits = &limits;
 
     deviceDescriptor.uncapturedErrorCallbackInfo.callback = uncapturedErrorCallbackInfo.callback;
