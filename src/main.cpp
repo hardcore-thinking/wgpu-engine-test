@@ -51,8 +51,8 @@
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
-constexpr float windowWidth = 1138.0f;
-constexpr float windowHeight = 640.0f;
+constexpr float windowWidth = 1920.0f;
+constexpr float windowHeight = 1080.0f;
 
 struct MyUniforms
 {
