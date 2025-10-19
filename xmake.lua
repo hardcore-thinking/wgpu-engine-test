@@ -2,7 +2,7 @@ add_rules("mode.debug", "mode.release", "mode.coverage")
 set_warnings("extra", "all", "error")
 set_optimize("fastest")
 
-add_requireconfs("wgpu-native", "**.wgpu-native", { version = "v27.0.2+0", override = true })
+add_requireconfs("wgpu-native", "**.wgpu-native", { version = "v24.0.0+1", override = true })
 
 package("wgpu-native-cpp")
     set_kind("library", { headeronly = true })

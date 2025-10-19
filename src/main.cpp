@@ -175,7 +175,6 @@ int main()
 			std::cout << std::endl;
 		};
 
-		//(void)logCallback;
 		wgpuSetLogCallback(logCallback, nullptr);
 
 		Window window(windowCreationInfo);
