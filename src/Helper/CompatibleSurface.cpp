@@ -18,6 +18,8 @@ CompatibleSurface::~CompatibleSurface()
 
 void CompatibleSurface::Configure(Adapter &adapter, Device &device, Window &window)
 {
+    std::cout << _handle << std::endl;
+
     std::vector<wgpu::TextureFormat> textureFormats{};
 
     wgpu::SurfaceConfiguration surfaceConfiguration{};
@@ -27,8 +29,10 @@ void CompatibleSurface::Configure(Adapter &adapter, Device &device, Window &wind
     wgpu::SurfaceCapabilities surfaceCapabilities;
     _handle.getCapabilities(adapter.Handle(), &surfaceCapabilities);
 
-    // SDL_DisplayMode displayMode = window.DisplayMode();
-    int width = 0;
+    wgpu::TextureUsage
+
+        // SDL_DisplayMode displayMode = window.DisplayMode();
+        int width = 0;
     int height = 0;
     SDL_GetWindowSize(window.Handle(), &width, &height);
 

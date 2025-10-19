@@ -180,7 +180,7 @@ int main()
 			std::cout << std::endl;
 		};
 
-		wgpuSetLogCallback(logCallback, nullptr);
+		(void)logCallback; // wgpuSetLogCallback(logCallback, nullptr);
 
 		Window window(windowCreationInfo);
 		CompatibleSurface surface(instance, window);

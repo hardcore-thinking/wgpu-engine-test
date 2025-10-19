@@ -36,9 +36,13 @@ add_requireconfs("**", { system = false }) -- forces to install packages even if
 
 add_requires("libsdl3", { configs = { wayland = true, x11 = true, shared = true } })
 
-add_requires("sdl3webgpu", "wgpu-native-cpp", "tinyobjloader", "stb")
+add_requires("wgpu-native-cpp", "tinyobjloader", "stb")
+
+add_requires("sdl3webgpu", { configs = { shared = true, debug = true } })
 add_requireconfs("sdl3webgpu.libsdl3", { configs = { wayland = true, x11 = true, shared = true } })
+
 add_requires("wgpu-native 2025.09.03")
+
 add_requires("imgui", { configs = { sdl3 = true, wgpu = true, wgpu_backend = wgpu } })
 add_requireconfs("imgui.libsdl3", { configs = { wayland = true, x11 = true, shared = true } })
 
@@ -54,6 +58,7 @@ target("wgpu-test")
 
     if is_mode("debug") then
         set_optimize("none")
+
         add_cxxflags("-fsanitize=address,undefined", {force = true})
         -- add_cxxflags("-fanalyzer", {force = true})
         add_ldflags("-fsanitize=address,undefined", {force = true})
