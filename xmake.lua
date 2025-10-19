@@ -32,7 +32,7 @@ package_end()
 
 set_languages("cxx20")
 
-add_requireconfs("**", { system = false }) -- forces to install packages even if they are in the system installed packages
+-- add_requireconfs("**", { system = false }) -- forces to install packages even if they are in the system installed packages
 
 add_requires("libsdl3", { configs = { wayland = true, x11 = true, shared = true } })
 
