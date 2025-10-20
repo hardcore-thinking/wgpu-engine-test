@@ -13,14 +13,14 @@ struct VertexOutput {
  
 @vertex fn vs(@builtin(vertex_index) vNdx: u32) -> VertexOutput {
     let pos = array(
-        vec2f(-1, 3),
-        vec2f(-1,-1),
-        vec2f( 3,-1),
+        vec2f(-1.0,  3.0),
+        vec2f(-1.0, -1.0),
+        vec2f( 3.0, -1.0),
     );
     
     var out: VertexOutput;
     
-    out.position = vec4f(pos[vNdx], 1, 1);
+    out.position = vec4f(pos[vNdx], 1.0, 1.0);
     out.pos = out.position;
     
     return out;

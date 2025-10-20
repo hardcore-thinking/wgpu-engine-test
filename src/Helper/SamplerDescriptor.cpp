@@ -1,9 +1,8 @@
 #include <Helper/SamplerDescriptor.hpp>
 
-SamplerDescriptor::SamplerDescriptor(float samplerLodMinClamp, float samplerLodMaxClamp)
-{
-	(void)samplerLodMinClamp;
-	(void)samplerLodMaxClamp;
+SamplerDescriptor::SamplerDescriptor(float samplerLodMinClamp, float samplerLodMaxClamp) {
+	(void) samplerLodMinClamp;
+	(void) samplerLodMaxClamp;
 
 	addressModeU = wgpu::AddressMode::Repeat;
 	addressModeV = wgpu::AddressMode::Repeat;

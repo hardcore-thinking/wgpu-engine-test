@@ -82,7 +82,7 @@ target("wgpu-test")
     add_headerfiles("inc/Math/*.hpp")
     add_headerfiles("inc/Helper/*.hpp")
     add_headerfiles("inc/Resources/Geometry/*.hpp")
-    add_headerfiles("inc/Resources/Texture/*.hpp")    
+    add_headerfiles("inc/Resources/Texture/*.hpp")
     add_headerfiles("inc/Utils/*.hpp")
 
     add_includedirs("inc")

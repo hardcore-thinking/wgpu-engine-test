@@ -1,6 +1,6 @@
 #include <Helper/TextureBinding.hpp>
 
-TextureBinding::TextureBinding(uint32_t textureBinding, TextureView& textureViewHandle) {	
+TextureBinding::TextureBinding(uint32_t textureBinding, TextureView& textureViewHandle) {
 	binding = textureBinding;
 	textureView = textureViewHandle.Handle();
 }

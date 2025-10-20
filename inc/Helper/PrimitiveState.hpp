@@ -4,8 +4,8 @@
 #include <wgpu-native/webgpu.hpp>
 
 struct PrimitiveState : public wgpu::PrimitiveState {
-    public:
-        PrimitiveState();
+public:
+	PrimitiveState();
 };
 
 #endif // PRIMITIVESTATE_HPP

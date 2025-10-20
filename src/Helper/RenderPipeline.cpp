@@ -1,6 +1,6 @@
 #include <Helper/RenderPipeline.hpp>
 
-RenderPipeline::RenderPipeline(Device& device,RenderPipelineDescriptor const& renderPipelineDescriptor) {
+RenderPipeline::RenderPipeline(Device& device, RenderPipelineDescriptor const& renderPipelineDescriptor) {
 	_handle = device->createRenderPipeline(renderPipelineDescriptor);
 	if (_handle == nullptr) {
 		throw std::runtime_error("Failed to create render pipeline");

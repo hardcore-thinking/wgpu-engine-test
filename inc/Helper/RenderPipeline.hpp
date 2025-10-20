@@ -12,18 +12,22 @@
 
 class RenderPipeline {
 public:
-    RenderPipeline() = delete;
-    RenderPipeline(Device& device, RenderPipelineDescriptor const& renderPipelineDescriptor);
-    ~RenderPipeline();
+	RenderPipeline() = delete;
+	RenderPipeline(Device& device, RenderPipelineDescriptor const& renderPipelineDescriptor);
+	~RenderPipeline();
 
-    public:
-        wgpu::RenderPipeline& Handle() { return _handle; }
-        wgpu::RenderPipeline const& Handle() const { return _handle; }
+public:
+	wgpu::RenderPipeline& Handle() {
+		return _handle;
+	}
+	wgpu::RenderPipeline const& Handle() const {
+		return _handle;
+	}
 
-        wgpu::RenderPipeline* operator->();
+	wgpu::RenderPipeline* operator->();
 
-    private:
-        wgpu::RenderPipeline _handle = nullptr;
+private:
+	wgpu::RenderPipeline _handle = nullptr;
 };
 
 #endif // RENDERPIPELINE_HPP

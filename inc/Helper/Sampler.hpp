@@ -11,19 +11,23 @@
 #include <Helper/SamplerDescriptor.hpp>
 
 class Sampler {
-    public:
-        Sampler() = delete;
-        Sampler(Device& device, SamplerDescriptor const& samplerDescriptor);
-        ~Sampler();
+public:
+	Sampler() = delete;
+	Sampler(Device& device, SamplerDescriptor const& samplerDescriptor);
+	~Sampler();
 
-    public:
-        wgpu::Sampler& Handle() { return _handle; }
-        wgpu::Sampler const& Handle() const { return _handle; }
+public:
+	wgpu::Sampler& Handle() {
+		return _handle;
+	}
+	wgpu::Sampler const& Handle() const {
+		return _handle;
+	}
 
-        wgpu::Sampler* operator->();
+	wgpu::Sampler* operator->();
 
-    private:
-        wgpu::Sampler _handle = nullptr;
+private:
+	wgpu::Sampler _handle = nullptr;
 };
 
 #endif // SAMPLER_HPP

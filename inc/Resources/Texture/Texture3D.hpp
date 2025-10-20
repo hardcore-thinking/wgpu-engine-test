@@ -14,11 +14,9 @@
 #include <Helper/Descriptors.hpp>
 
 class Texture3D {
-
-
-    private:
-        Texture _texture;
-        TextureView _textureView;
+private:
+	Texture _texture;
+	TextureView _textureView;
 };
 
 #endif // TEXTURE3D_HPP

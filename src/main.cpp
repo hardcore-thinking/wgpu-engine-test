@@ -18,7 +18,7 @@
 #include <wgpu.h>
 
 #define SDL_MAIN_HANDLED
-#include <SDL3/SDL_main.h>
+#include <SDL3/
 #include <SDL3/SDL.h>
 
 #include <sdl3webgpu.h>
@@ -51,81 +51,76 @@
 
 constexpr float const PI = 3.1415926535897932384626433832795f;
 
-constexpr float windowWidth = 1920.0f;
-constexpr float windowHeight = 1080.0f;
+constexpr float windowWidth = 256.0f;
+constexpr float windowHeight = 240.0f;
 
-struct MyUniforms
-{
-	Math::Matrix4x4 viewDirectionProjectionInverse{};
+struct MyUniforms {
+	Math::Matrix4x4 viewDirectionProjectionInverse {};
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0, "MyUniforms must be aligned to 16 bytes.");
 
-Logger logger{};
+Logger logger {};
 
-auto DeviceLostCallback = [](wgpu::Device const *device, wgpu::DeviceLostReason reason, wgpu::StringView message, void *userData1)
-{
-	(void)device;
-	(void)userData1;
+auto DeviceLostCallback = [](wgpu::Device const* device, wgpu::DeviceLostReason reason, wgpu::StringView message, void* userData1) {
+	(void) device;
+	(void) userData1;
 	std::cerr << "[Lost device] (" << reason << "): " << Utils::StrViewRepr(message) << std::endl;
-};
-auto UncapturedErrorCallback = [](wgpu::Device const *device, wgpu::ErrorType type, wgpu::StringView message, void *userData1)
-{
-	(void)device;
-	(void)userData1;
+	};
+auto UncapturedErrorCallback = [](wgpu::Device const* device, wgpu::ErrorType type, wgpu::StringView message, void* userData1) {
+	(void) device;
+	(void) userData1;
 	std::cerr << "[Uncaptured error] (" << type << "): " << Utils::StrViewRepr(message) << std::endl;
-};
+	};
 
 bool running = false;
 
-static wgpu::TextureView GetNextTexture(Window &window, Adapter &adapter, Device &device, CompatibleSurface &surface)
-{
-	wgpu::SurfaceTexture surfaceTexture{};
+static wgpu::TextureView GetNextTexture(Window& window, Adapter& adapter, Device& device, CompatibleSurface& surface) {
+	wgpu::SurfaceTexture surfaceTexture {};
 	surface->getCurrentTexture(&surfaceTexture);
 
 	// std::cout << "Surface texture: ";
-	switch (surfaceTexture.status)
-	{
-	case wgpu::SurfaceGetCurrentTextureStatus::DeviceLost:
-		std::cerr << "Device lost" << std::endl;
-		return nullptr;
+	switch (surfaceTexture.status) {
+		case wgpu::SurfaceGetCurrentTextureStatus::DeviceLost:
+			std::cerr << "Device lost" << std::endl;
+			return nullptr;
 
-	case wgpu::SurfaceGetCurrentTextureStatus::Lost:
-		std::cerr << "Lost" << std::endl;
-		return nullptr;
+		case wgpu::SurfaceGetCurrentTextureStatus::Lost:
+			std::cerr << "Lost" << std::endl;
+			return nullptr;
 
-	case wgpu::SurfaceGetCurrentTextureStatus::Outdated:
-		std::cerr << "Outdated" << std::endl;
-		return nullptr;
+		case wgpu::SurfaceGetCurrentTextureStatus::Outdated:
+			std::cerr << "Outdated" << std::endl;
+			return nullptr;
 
-	case wgpu::SurfaceGetCurrentTextureStatus::OutOfMemory:
-		std::cerr << "Out of memory" << std::endl;
-		return nullptr;
+		case wgpu::SurfaceGetCurrentTextureStatus::OutOfMemory:
+			std::cerr << "Out of memory" << std::endl;
+			return nullptr;
 
-	case wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal:
-		// std::cout << "Success" << std::endl;
-		break;
+		case wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal:
+			// std::cout << "Success" << std::endl;
+			break;
 
-	case wgpu::SurfaceGetCurrentTextureStatus::SuccessSuboptimal:
-		std::cerr << "Success suboptimal" << std::endl;
-		// Note: This can happen if the surface is resized or the window is minimized.
-		// You may want to handle this case by reconfiguring the surface.
-		surface->unconfigure();
-		surface.Configure(adapter, device, window);
-		break;
+		case wgpu::SurfaceGetCurrentTextureStatus::SuccessSuboptimal:
+			std::cerr << "Success suboptimal" << std::endl;
+			// Note: This can happen if the surface is resized or the window is minimized.
+			// You may want to handle this case by reconfiguring the surface.
+			surface->unconfigure();
+			surface.Configure(adapter, device, window);
+			break;
 
-	case wgpu::SurfaceGetCurrentTextureStatus::Timeout:
-		std::cerr << "Timeout" << std::endl;
-		return nullptr;
+		case wgpu::SurfaceGetCurrentTextureStatus::Timeout:
+			std::cerr << "Timeout" << std::endl;
+			return nullptr;
 
-	default:
-		std::cerr << "Unknown (" << surfaceTexture.status << ")" << std::endl;
-		return nullptr;
+		default:
+			std::cerr << "Unknown (" << surfaceTexture.status << ")" << std::endl;
+			return nullptr;
 	}
 
 	wgpu::Texture texture = surfaceTexture.texture;
 
-	wgpu::TextureViewDescriptor textureViewDescriptor{};
+	wgpu::TextureViewDescriptor textureViewDescriptor {};
 	textureViewDescriptor.label = wgpu::StringView("current_surface_texture_view");
 	textureViewDescriptor.format = texture.getFormat();
 	textureViewDescriptor.dimension = wgpu::TextureViewDimension::_2D;
@@ -140,22 +135,19 @@ static wgpu::TextureView GetNextTexture(Window &window, Adapter &adapter, Device
 	return textureView;
 }
 
-int main()
-{
-	try
-	{
+int main() {
+	try {
 		// MARK: Main instances
 		Instance instance;
-		WindowCreationInfo windowCreationInfo{
+		WindowCreationInfo windowCreationInfo {
 			.title = "WebGPU Skybox",
 			.x = SDL_WINDOWPOS_CENTERED,
 			.y = SDL_WINDOWPOS_CENTERED,
 			.w = static_cast<int>(windowWidth),
 			.h = static_cast<int>(windowHeight),
-			.flags = 0};
+			.flags = 0 };
 
-		if (!SDL_Init(SDL_INIT_VIDEO))
-		{
+		if (!SDL_Init(SDL_INIT_VIDEO)) {
 			std::cerr << "Can't initialize SDL3: " << SDL_GetError() << std::endl;
 			SDL_Quit();
 			throw std::runtime_error("Can't initialize SDL3");
@@ -166,14 +158,13 @@ int main()
 
 		wgpuSetLogLevel(WGPULogLevel_Debug);
 
-		auto logCallback = [](WGPULogLevel level, WGPUStringView message, void *userdata1)
-		{
+		auto logCallback = [](WGPULogLevel level, WGPUStringView message, void* userdata1) {
 			std::string levelStr = (level == 1 ? "ERROR" : (level == 2 ? "WARN" : (level == 3 ? "INFO" : (level == 4 ? "DEBUG" : (level == 5 ? "TRACE" : "UNKNOWN")))));
 			std::cout << levelStr << " log: " << Utils::StrViewRepr(message) << (userdata1 ? ": " : "");
 			if (userdata1)
 				std::cout << userdata1;
 			std::cout << std::endl;
-		};
+			};
 
 		wgpuSetLogCallback(logCallback, nullptr);
 
@@ -194,20 +185,20 @@ int main()
 		Queue queue(device);
 		surface.Configure(adapter, device, window);
 
-		std::vector<VertexAttributes> vertexData{};
-		std::vector<BindGroupLayout> bindGroupLayouts{};
-		std::vector<BindGroup> bindGroups{};
+		std::vector<VertexAttributes> vertexData {};
+		std::vector<BindGroupLayout> bindGroupLayouts {};
+		std::vector<BindGroup> bindGroups {};
 
 		// MARK: Vertex buffer layout
 		std::vector<VertexAttribute> vertexAttributes;
 		vertexAttributes.push_back(VertexAttribute(0, wgpu::VertexFormat::Float32x3, offsetof(VertexAttributes, position)));
 
-		std::vector<VertexBufferLayout> vertexBufferLayouts{};
+		std::vector<VertexBufferLayout> vertexBufferLayouts {};
 		VertexBufferLayout vertexBufferLayout(sizeof(VertexAttributes), vertexAttributes);
 		vertexBufferLayouts.push_back(vertexBufferLayout);
 
 		// MARK: Cube binding layouts
-		std::vector<BindGroupLayoutEntry> bindGroupLayoutEntries{};
+		std::vector<BindGroupLayoutEntry> bindGroupLayoutEntries {};
 		bindGroupLayoutEntries.push_back(BufferBindingLayout(0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, wgpu::BufferBindingType::Uniform, sizeof(MyUniforms)));
 		bindGroupLayoutEntries.push_back(TextureBindingLayout(1, wgpu::ShaderStage::Fragment, wgpu::TextureSampleType::Float));
 		bindGroupLayoutEntries[1].texture.viewDimension = wgpu::TextureViewDimension::Cube;
@@ -230,7 +221,7 @@ int main()
 		TextureDescriptor textureDescriptor(
 			wgpu::TextureFormat::RGBA8Unorm,
 			wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::TextureBinding,
-			Extent3D((int)windowWidth, (int)windowHeight, 6));
+			Extent3D((int) windowWidth, (int) windowHeight, 6));
 
 		textureDescriptor.size.width = 4096;
 		textureDescriptor.size.height = 4096;
@@ -245,19 +236,19 @@ int main()
 
 		// Texture2D texture("resources/futuristic.png", device, queue, textureDescriptor, textureViewDescriptor);
 
-		Cubemap skyboxCubemap({"resources/stars_px.jpg",
+		Cubemap skyboxCubemap({ "resources/stars_px.jpg",
 							   "resources/stars_nx.jpg",
 							   "resources/stars_py.jpg",
 							   "resources/stars_ny.jpg",
 							   "resources/stars_pz.jpg",
-							   "resources/stars_nz.jpg"},
-							  device, queue, textureDescriptor, textureViewDescriptor);
+							   "resources/stars_nz.jpg" },
+			device, queue, textureDescriptor, textureViewDescriptor);
 
 		SamplerDescriptor samplerDescriptor(0.0f, 8.0f);
 		Sampler sampler(device, samplerDescriptor);
 
 		// MARK: Cube bindings array
-		std::vector<BindGroupEntry> bindGroupEntries{};
+		std::vector<BindGroupEntry> bindGroupEntries {};
 		bindGroupEntries.push_back(BufferBinding(0, uniformBuffer, sizeof(MyUniforms), 0));
 		bindGroupEntries.push_back(TextureBinding(1, skyboxCubemap.View()));
 		bindGroupEntries.push_back(SamplerBinding(2, sampler));
@@ -268,8 +259,8 @@ int main()
 		// MARK: Cube depth texture
 		wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Depth24Plus;
 
-		std::vector<wgpu::TextureFormat> viewFormats{depthTextureFormat};
-		TextureDescriptor depthTextureDescriptor(depthTextureFormat, wgpu::TextureUsage::RenderAttachment, {static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1}, viewFormats);
+		std::vector<wgpu::TextureFormat> viewFormats { depthTextureFormat };
+		TextureDescriptor depthTextureDescriptor(depthTextureFormat, wgpu::TextureUsage::RenderAttachment, { static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight), 1 }, viewFormats);
 		Texture depthTexture(device, depthTextureDescriptor);
 
 		TextureViewDescriptor depthTextureViewDescriptor(wgpu::TextureAspect::DepthOnly, depthTextureFormat);
@@ -289,17 +280,17 @@ int main()
 
 		ShaderModule skyboxShaderModule(device, "resources/skybox.wgsl");
 
-		std::vector<ConstantEntry> vertexConstantEntries{};
+		std::vector<ConstantEntry> vertexConstantEntries {};
 		// VertexState vertexState(wgpu::StringView("vs"), skyboxShaderModule, vertexBufferLayouts, vertexConstantEntries);
 		VertexState vertexState(wgpu::StringView("vs"), skyboxShaderModule, {}, {});
 
 		BlendComponent colorComponent(wgpu::BlendFactor::SrcAlpha, wgpu::BlendFactor::OneMinusSrcAlpha, wgpu::BlendOperation::Add);
 		BlendComponent alphaComponent(wgpu::BlendFactor::Zero, wgpu::BlendFactor::One, wgpu::BlendOperation::Add);
 		BlendState blendState(colorComponent, alphaComponent);
-		std::vector<ColorTargetState> colorTargetStates{};
+		std::vector<ColorTargetState> colorTargetStates {};
 		ColorTargetState colorTargetState(adapter, surface, blendState);
 		colorTargetStates.push_back(colorTargetState);
-		std::vector<ConstantEntry> fragmentConstantEntries{};
+		std::vector<ConstantEntry> fragmentConstantEntries {};
 		FragmentState fragmentState(wgpu::StringView("fs"), skyboxShaderModule, colorTargetStates, fragmentConstantEntries);
 
 		PipelineLayoutDescriptor pipelineLayoutDescriptor(bindGroupLayouts);
@@ -329,11 +320,11 @@ int main()
 		Math::Matrix4x4 viewProjection = projection * view;
 
 		MyUniforms uniforms = {
-			.viewDirectionProjectionInverse = Math::Matrix4x4::Transpose(Math::Matrix4x4::Inverse(viewProjection))};
+			.viewDirectionProjectionInverse = Math::Matrix4x4::Transpose(Math::Matrix4x4::Inverse(viewProjection)) };
 
 		queue->writeBuffer(uniformBuffer.Handle(), 0, &uniforms, sizeof(MyUniforms));
 
-		bool const *keyboard = SDL_GetKeyboardState(nullptr);
+		bool const* keyboard = SDL_GetKeyboardState(nullptr);
 
 		running = true;
 		// uint64_t frameCount = 0;
@@ -344,11 +335,9 @@ int main()
 		double sensitivity = 0.005f; // Adjust sensitivity as needed
 
 		// MARK: Main loop
-		SDL_Event event{};
-		while (running)
-		{
-			queue->onSubmittedWorkDone(wgpu::CallbackMode::AllowSpontaneous, [](WGPUQueueWorkDoneStatus status)
-									   {
+		SDL_Event event {};
+		while (running) {
+			queue->onSubmittedWorkDone(wgpu::CallbackMode::AllowSpontaneous, [](WGPUQueueWorkDoneStatus status) {
 				static int i = 0;
 				i++;
 				std::cout << "Job completed: " << i << "(" << status << ")" << std::endl; });
@@ -360,43 +349,34 @@ int main()
 			// std::cout << "[" << std::setw(20) << frameCount++ << "]\r";
 
 			// MARK: Events handling
-			while (SDL_PollEvent(&event))
-			{
-				if (event.type == SDL_EVENT_QUIT || keyboard[SDL_SCANCODE_ESCAPE])
-				{
+			while (SDL_PollEvent(&event)) {
+				if (event.type == SDL_EVENT_QUIT || keyboard[SDL_SCANCODE_ESCAPE]) {
 					running = false;
 				}
 
-				if (event.type == SDL_EVENT_MOUSE_MOTION)
-				{
-					if (angleX - event.motion.yrel * (float)sensitivity > PI / 2.0f)
-					{
+				if (event.type == SDL_EVENT_MOUSE_MOTION) {
+					if (angleX - event.motion.yrel * (float) sensitivity > PI / 2.0f) {
 						angleX = PI / 2.0f;
 					}
 
-					else if (angleX - event.motion.yrel * (float)sensitivity < -PI / 2.0f)
-					{
+					else if (angleX - event.motion.yrel * (float) sensitivity < -PI / 2.0f) {
 						angleX = -PI / 2.0f;
 					}
 
-					else
-					{
-						angleX -= event.motion.yrel * (float)sensitivity; // Adjust sensitivity as needed
+					else {
+						angleX -= event.motion.yrel * (float) sensitivity; // Adjust sensitivity as needed
 					}
 
-					if (angleZ - event.motion.xrel * (float)sensitivity > PI)
-					{
+					if (angleZ - event.motion.xrel * (float) sensitivity > PI) {
 						angleZ -= 2.0f * PI;
 					}
 
-					else if (angleZ - event.motion.xrel * (float)sensitivity < -PI)
-					{
+					else if (angleZ - event.motion.xrel * (float) sensitivity < -PI) {
 						angleZ += 2.0f * PI;
 					}
 
-					else
-					{
-						angleZ -= event.motion.xrel * (float)sensitivity; // Adjust sensitivity as needed
+					else {
+						angleZ -= event.motion.xrel * (float) sensitivity; // Adjust sensitivity as needed
 					}
 				}
 			}
@@ -417,7 +397,7 @@ int main()
 			CommandEncoderDescriptor commandEncoderDescriptor;
 			CommandEncoder commandEncoder(device, commandEncoderDescriptor);
 
-			std::vector<RenderPassColorAttachment> renderPassColorAttachments{};
+			std::vector<RenderPassColorAttachment> renderPassColorAttachments {};
 			renderPassColorAttachments.push_back(RenderPassColorAttachment(textureView));
 
 			RenderPassDepthStencilAttachment renderPassDepthStencilAttachment(depthTextureView);
@@ -445,8 +425,7 @@ int main()
 		}
 	}
 
-	catch (const std::exception &e)
-	{
+	catch (const std::exception& e) {
 		std::cerr << "Exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}

@@ -12,21 +12,25 @@
 #include <Helper/Device.hpp>
 
 class ShaderModule {
-    public:
-        ShaderModule() = delete;
-        ShaderModule(Device& device, std::filesystem::path const& path);
-        ~ShaderModule();
+public:
+	ShaderModule() = delete;
+	ShaderModule(Device& device, std::filesystem::path const& path);
+	~ShaderModule();
 
-    public:
-        wgpu::ShaderModule& Handle() { return _handle; }
-        wgpu::ShaderModule const& Handle() const { return _handle; }
+public:
+	wgpu::ShaderModule& Handle() {
+		return _handle;
+	}
+	wgpu::ShaderModule const& Handle() const {
+		return _handle;
+	}
 
-        wgpu::ShaderModule* operator -> ();
-        wgpu::ShaderModule const* operator -> () const;
+	wgpu::ShaderModule* operator -> ();
+	wgpu::ShaderModule const* operator -> () const;
 
-    private:
-        wgpu::ShaderModule _handle = nullptr;
-        std::string _code = "";
+private:
+	wgpu::ShaderModule _handle = nullptr;
+	std::string _code = "";
 };
 
 #endif // SHADERMODULE_HPP

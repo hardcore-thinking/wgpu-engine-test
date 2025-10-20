@@ -4,7 +4,7 @@
 #include <wgpu-native/webgpu.hpp>
 
 struct CommandBufferDescriptor : public wgpu::CommandBufferDescriptor {
-    CommandBufferDescriptor();
+	CommandBufferDescriptor();
 };
 
 #endif // COMMANDBUFFERDESCRIPTOR_HPP

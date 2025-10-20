@@ -22,25 +22,33 @@
 #include <Helper/TexelCopyBufferLayout.hpp>
 
 class Texture2D {
-    public:
-        Texture2D() = default;
-        Texture2D(std::filesystem::path const& path, Device& device, Queue& queue, TextureDescriptor& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor);
-        Texture2D(Texture2D const& texture2D) = delete;
-        Texture2D(Texture2D&& other);
-        ~Texture2D() = default;
+public:
+	Texture2D() = default;
+	Texture2D(std::filesystem::path const& path, Device& device, Queue& queue, TextureDescriptor& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor);
+	Texture2D(Texture2D const& texture2D) = delete;
+	Texture2D(Texture2D&& other);
+	~Texture2D() = default;
 
-        Texture2D& operator=(Texture2D const& texture2D) = delete;
-        Texture2D& operator=(Texture2D&& other) = default;
+	Texture2D& operator=(Texture2D const& texture2D) = delete;
+	Texture2D& operator=(Texture2D&& other) = default;
 
-        Texture const& Handle() const { return _texture; }
-        TextureView const& View() const { return _textureView; }
+	Texture const& Handle() const {
+		return _texture;
+	}
+	TextureView const& View() const {
+		return _textureView;
+	}
 
-        Texture& Handle() { return _texture; }
-        TextureView& View() { return _textureView; }
+	Texture& Handle() {
+		return _texture;
+	}
+	TextureView& View() {
+		return _textureView;
+	}
 
-    private:
-        Texture _texture;
-        TextureView _textureView;
+private:
+	Texture _texture;
+	TextureView _textureView;
 };
 
 #endif // TEXTURE2D_HPP

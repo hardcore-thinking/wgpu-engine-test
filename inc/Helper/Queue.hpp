@@ -6,20 +6,24 @@
 #include <Helper/Device.hpp>
 
 class Queue {
-    public:
-        Queue() = delete;
-        Queue(Device const& device);
-        ~Queue();
+public:
+	Queue() = delete;
+	Queue(Device const& device);
+	~Queue();
 
-    public:
-        wgpu::Queue& Handle() { return _handle; }
-        wgpu::Queue const& Handle() const { return _handle; }
+public:
+	wgpu::Queue& Handle() {
+		return _handle;
+	}
+	wgpu::Queue const& Handle() const {
+		return _handle;
+	}
 
-        wgpu::Queue* operator-> ();
-        wgpu::Queue const* operator-> () const;
+	wgpu::Queue* operator-> ();
+	wgpu::Queue const* operator-> () const;
 
-    private:
-        wgpu::Queue _handle = nullptr;
+private:
+	wgpu::Queue _handle = nullptr;
 };
 
 #endif // QUEUE_CPP

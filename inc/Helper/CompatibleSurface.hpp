@@ -18,12 +18,12 @@
 class CompatibleSurface : public Surface
 {
 public:
-    CompatibleSurface() = default;
-    CompatibleSurface(Instance const &instance, Window &window);
-    ~CompatibleSurface();
+	CompatibleSurface() = default;
+	CompatibleSurface(Instance const& instance, Window& window);
+	~CompatibleSurface();
 
 public:
-    void Configure(Adapter &adapter, Device &device, Window &window);
+	void Configure(Adapter& adapter, Device& device, Window& window);
 };
 
 #endif // COMPATIBLESURFACE_HPP

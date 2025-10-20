@@ -11,19 +11,23 @@
 #include <Helper/RenderPassDescriptor.hpp>
 
 class RenderPassEncoder {
-    public:
-        RenderPassEncoder() = delete;
-        RenderPassEncoder(CommandEncoder& commandEncoder, RenderPassDescriptor const& renderPassDescriptor);
-        ~RenderPassEncoder();
+public:
+	RenderPassEncoder() = delete;
+	RenderPassEncoder(CommandEncoder& commandEncoder, RenderPassDescriptor const& renderPassDescriptor);
+	~RenderPassEncoder();
 
-    public:
-        wgpu::RenderPassEncoder& Handle() { return _handle; }
-        wgpu::RenderPassEncoder const& Handle() const { return _handle; }
+public:
+	wgpu::RenderPassEncoder& Handle() {
+		return _handle;
+	}
+	wgpu::RenderPassEncoder const& Handle() const {
+		return _handle;
+	}
 
-        wgpu::RenderPassEncoder* operator -> ();
+	wgpu::RenderPassEncoder* operator -> ();
 
-    private:
-        wgpu::RenderPassEncoder _handle = nullptr;
+private:
+	wgpu::RenderPassEncoder _handle = nullptr;
 };
 
 #endif // RENDERPASSENCODER_HPP

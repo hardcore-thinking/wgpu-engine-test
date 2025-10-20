@@ -11,15 +11,15 @@
 #include <Helper/PipelineLayout.hpp>
 
 struct RenderPipelineDescriptor : public wgpu::RenderPipelineDescriptor {
-    public:
-        RenderPipelineDescriptor(
-            DepthStencilState const& depthStencilState,
-            PrimitiveState const& primitiveState,
-            MultisampleState const& multisampleState,
-            VertexState const& vertexState,
-            FragmentState const& fragmentState,
-            PipelineLayout& pipelineLayout
-        );
+public:
+	RenderPipelineDescriptor(
+		DepthStencilState const& depthStencilState,
+		PrimitiveState const& primitiveState,
+		MultisampleState const& multisampleState,
+		VertexState const& vertexState,
+		FragmentState const& fragmentState,
+		PipelineLayout& pipelineLayout
+	);
 };
 
 #endif // RENDERPIPELINEDESCRIPTOR_HPP

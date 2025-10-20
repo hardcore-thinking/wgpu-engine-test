@@ -7,8 +7,8 @@
 #include <Helper/Origin3D.hpp>
 
 struct TexelCopyTextureInfo : public wgpu::TexelCopyTextureInfo {
-    TexelCopyTextureInfo() = default;
-    TexelCopyTextureInfo(Texture const& texture);
+	TexelCopyTextureInfo() = default;
+	TexelCopyTextureInfo(Texture const& texture);
 };
 
 #endif // TEXELCOPYTEXTUREINFO_HPP
