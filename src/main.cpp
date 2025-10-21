@@ -18,7 +18,7 @@
 #include <wgpu.h>
 
 #define SDL_MAIN_HANDLED
-#include <SDL3/
+#include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 
 #include <sdl3webgpu.h>
