@@ -52,20 +52,20 @@ target("wgpu-test")
 
     if is_plat("linux") then
         add_cxxflags("-pedantic", "-pedantic-errors")
-
-        if is_mode("debug") then
-            set_optimize("none")
-
-            add_cxxflags("-fsanitize=address,undefined", {force = true})
-            -- add_cxxflags("-fanalyzer", {force = true})
-            add_ldflags("-fsanitize=address,undefined", {force = true})
-            add_cxxflags("-fno-omit-frame-pointer", {force = true})
-        end
     end -- TODO
     
     if is_plat("windows") then end -- TODO
     
     if is_plat("macosx") then end -- TODO
+
+    if is_mode("debug") then
+        set_optimize("none")
+
+        add_cxxflags("-fsanitize=address,undefined", {force = true})
+        -- add_cxxflags("-fanalyzer", {force = true})
+        add_ldflags("-fsanitize=address,undefined", {force = true})
+        add_cxxflags("-fno-omit-frame-pointer", {force = true})
+    end
 
     add_packages("wgpu-native", "libsdl3", "sdl3webgpu") 
     add_packages("wgpu-native-cpp", "tinyobjloader", "stb")
