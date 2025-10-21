@@ -19,21 +19,25 @@
 #include <Helper/Extent3D.hpp>
 
 class Cubemap {
-    public:
-        Cubemap(std::array<std::filesystem::path, 6> const& texturePaths, Device& device, Queue& queue, TextureDescriptor& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor);
-    
-    public:
-        Texture2D* operator[](size_t index);
-        Texture2D const* operator[](size_t index) const;
+public:
+	Cubemap(std::array<std::filesystem::path, 6> const& texturePaths, Device& device, Queue& queue, TextureDescriptor& textureDescriptor, TextureViewDescriptor const& textureViewDescriptor);
 
-        TextureView const& View() const { return _textureView; }
+public:
+	Texture2D* operator[](size_t index);
+	Texture2D const* operator[](size_t index) const;
 
-        TextureView& View() { return _textureView; }
+	TextureView const& View() const {
+		return _textureView;
+	}
 
-    private:
-        std::array<Texture2D, 6> _textures {};
-        Texture _texture {};
-        TextureView _textureView {};
+	TextureView& View() {
+		return _textureView;
+	}
+
+private:
+	std::array<Texture2D, 6> _textures {};
+	Texture _texture {};
+	TextureView _textureView {};
 };
 
 #endif // CUBEMAP_HPP

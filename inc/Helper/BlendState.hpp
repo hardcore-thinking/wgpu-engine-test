@@ -6,9 +6,9 @@
 #include <Helper/BlendComponent.hpp>
 
 struct BlendState : public wgpu::BlendState {
-    public:
-        BlendState() = delete;
-        BlendState(BlendComponent const& color, BlendComponent const& alpha);
+public:
+	BlendState() = delete;
+	BlendState(BlendComponent const& color, BlendComponent const& alpha);
 };
 
 #endif // BLENDSTATE_HPP

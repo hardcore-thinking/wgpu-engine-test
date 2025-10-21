@@ -4,8 +4,8 @@
 #include <wgpu-native/webgpu.hpp>
 
 struct StencilFaceState : public wgpu::StencilFaceState {
-    public:
-        StencilFaceState();
+public:
+	StencilFaceState();
 };
 
 #endif // STENCILFACESTATE_HPP

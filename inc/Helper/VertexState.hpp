@@ -10,9 +10,9 @@
 #include <Helper/ConstantEntry.hpp>
 
 struct VertexState : public wgpu::VertexState {
-    public:
-        VertexState() = delete;
-        VertexState(wgpu::StringView const& entryPointName, ShaderModule& shaderModule, std::vector<VertexBufferLayout> const& vertexBufferLayouts, std::vector<ConstantEntry> const& constantsEntries);
+public:
+	VertexState() = delete;
+	VertexState(wgpu::StringView const& entryPointName, ShaderModule& shaderModule, std::vector<VertexBufferLayout> const& vertexBufferLayouts, std::vector<ConstantEntry> const& constantsEntries);
 };
 
 #endif // VERTEXSTATE_HPP

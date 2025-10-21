@@ -7,18 +7,22 @@
 #include <Helper/PipelineLayoutDescriptor.hpp>
 
 class PipelineLayout {
-    public:
-        PipelineLayout() = delete;
-        PipelineLayout(Device& device, PipelineLayoutDescriptor const& pipelineLayoutDescriptor);
-        ~PipelineLayout();
+public:
+	PipelineLayout() = delete;
+	PipelineLayout(Device& device, PipelineLayoutDescriptor const& pipelineLayoutDescriptor);
+	~PipelineLayout();
 
-        wgpu::PipelineLayout& Handle() { return _handle; }
-        wgpu::PipelineLayout const& Handle() const { return _handle; }
+	wgpu::PipelineLayout& Handle() {
+		return _handle;
+	}
+	wgpu::PipelineLayout const& Handle() const {
+		return _handle;
+	}
 
-        wgpu::PipelineLayout* operator->();
-    
-    private:
-        wgpu::PipelineLayout _handle = nullptr;
+	wgpu::PipelineLayout* operator->();
+
+private:
+	wgpu::PipelineLayout _handle = nullptr;
 };
 
 #endif // PIPELINELAYOUT_HPP

@@ -8,9 +8,9 @@
 #include <Helper/BlendState.hpp>
 
 struct ColorTargetState : public wgpu::ColorTargetState {
-    public:
-        ColorTargetState() = delete;
-        ColorTargetState(Adapter& adapter, CompatibleSurface& compatibleSurface, BlendState const& blendState);
+public:
+	ColorTargetState() = delete;
+	ColorTargetState(Adapter& adapter, CompatibleSurface& compatibleSurface, BlendState const& blendState);
 };
 
 #endif // COLORTARGETSTATE_HPP	

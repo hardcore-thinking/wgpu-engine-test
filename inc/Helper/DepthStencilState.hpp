@@ -6,9 +6,9 @@
 #include <Helper/StencilFaceState.hpp>
 
 struct DepthStencilState : public wgpu::DepthStencilState {
-    public:
-        DepthStencilState();
-        DepthStencilState(StencilFaceState const& stencilFrontState, StencilFaceState const& stencilBackState, wgpu::TextureFormat depthTextureFormat);
+public:
+	DepthStencilState();
+	DepthStencilState(StencilFaceState const& stencilFrontState, StencilFaceState const& stencilBackState, wgpu::TextureFormat depthTextureFormat);
 };
 
 #endif // DEPTHSTENCILSTATE_HPP

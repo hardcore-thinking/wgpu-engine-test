@@ -21,7 +21,7 @@ Device::~Device() {
 }
 
 void Device::DisplayLimits() const {
-    std::cout << "\t- " << "Limits: " << std::endl;
+	std::cout << "\t- " << "Limits: " << std::endl;
 
 	std::cout << "\t\t- " << "Max bind groups: " << _limits.maxBindGroups << std::endl;
 	std::cout << "\t\t- " << "Max bind groups plus vertex buffers: " << _limits.maxBindGroupsPlusVertexBuffers << std::endl;

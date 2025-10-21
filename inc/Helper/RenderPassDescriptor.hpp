@@ -10,9 +10,9 @@
 #include <Helper/QuerySet.hpp>
 
 struct RenderPassDescriptor : public wgpu::RenderPassDescriptor {
-    public:
-        RenderPassDescriptor() = delete;
-        RenderPassDescriptor(std::vector<RenderPassColorAttachment> const& colorAttachments, RenderPassDepthStencilAttachment const& depthStencilAttachment);
+public:
+	RenderPassDescriptor() = delete;
+	RenderPassDescriptor(std::vector<RenderPassColorAttachment> const& colorAttachments, RenderPassDepthStencilAttachment const& depthStencilAttachment);
 };
 
 #endif // RENDERPASSDESCRIPTOR_HPP

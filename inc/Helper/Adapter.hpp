@@ -17,30 +17,40 @@
 class Adapter
 {
 public:
-    Adapter() = delete;
-    Adapter(Instance &instance, Surface &surface);
-    Adapter(Instance &instance, wgpu::RequestAdapterOptions const &options);
-    ~Adapter();
+	Adapter() = delete;
+	Adapter(Instance& instance, Surface& surface);
+	Adapter(Instance& instance, wgpu::RequestAdapterOptions const& options);
+	~Adapter();
 
 public:
-    wgpu::Adapter &Handle() { return _handle; }
-    wgpu::Adapter const &Handle() const { return _handle; }
+	wgpu::Adapter& Handle() {
+		return _handle;
+	}
+	wgpu::Adapter const& Handle() const {
+		return _handle;
+	}
 
-    wgpu::SupportedFeatures const &Features() const { return _features; }
-    wgpu::AdapterInfo const &Infos() const { return _infos; }
-    wgpu::Limits const &Limits() const { return _limits; }
+	wgpu::SupportedFeatures const& Features() const {
+		return _features;
+	}
+	wgpu::AdapterInfo const& Infos() const {
+		return _infos;
+	}
+	wgpu::Limits const& Limits() const {
+		return _limits;
+	}
 
-    wgpu::Adapter *operator->();
+	wgpu::Adapter* operator->();
 
-    void DisplayFeatures() const;
-    void DisplayInfos() const;
-    void DisplayLimits() const;
+	void DisplayFeatures() const;
+	void DisplayInfos() const;
+	void DisplayLimits() const;
 
 private:
-    wgpu::Adapter _handle = nullptr;
-    wgpu::SupportedFeatures _features{};
-    wgpu::AdapterInfo _infos{};
-    wgpu::Limits _limits{};
+	wgpu::Adapter _handle = nullptr;
+	wgpu::SupportedFeatures _features {};
+	wgpu::AdapterInfo _infos {};
+	wgpu::Limits _limits {};
 };
 
 #endif // ADAPTER_HPP

@@ -6,9 +6,8 @@
 
 #include <wgpu-native/webgpu.hpp>
 
-namespace Utils
-{
-    std::string_view StrViewRepr(wgpu::StringView const &view);
+namespace Utils {
+	std::string_view StrViewRepr(wgpu::StringView const& view);
 }
 
 #endif // STRINGVIEW_HPP

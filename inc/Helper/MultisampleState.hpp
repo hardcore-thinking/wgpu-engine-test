@@ -4,8 +4,8 @@
 #include <wgpu-native/webgpu.hpp>
 
 struct MultisampleState : public wgpu::MultisampleState {
-    public:
-        MultisampleState();
+public:
+	MultisampleState();
 };
 
 #endif // MULTISAMPLESTATE_HPP

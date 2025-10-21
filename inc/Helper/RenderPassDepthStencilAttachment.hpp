@@ -6,9 +6,9 @@
 #include <Helper/TextureView.hpp>
 
 struct RenderPassDepthStencilAttachment : public wgpu::RenderPassDepthStencilAttachment {
-    public:
-        RenderPassDepthStencilAttachment() = default;
-        RenderPassDepthStencilAttachment(TextureView const& textureView);
-}; 
+public:
+	RenderPassDepthStencilAttachment() = default;
+	RenderPassDepthStencilAttachment(TextureView const& textureView);
+};
 
 #endif // RENDERPASSDEPTHSTENCILATTACHMENT_HPP

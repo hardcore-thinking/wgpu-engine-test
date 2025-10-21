@@ -8,9 +8,9 @@
 using BindGroupLayoutEntry = wgpu::BindGroupLayoutEntry;
 
 struct BindGroupLayoutDescriptor : public wgpu::BindGroupLayoutDescriptor {
-    public:
-        BindGroupLayoutDescriptor() = delete;
-        BindGroupLayoutDescriptor(std::vector<BindGroupLayoutEntry> const& entries);
+public:
+	BindGroupLayoutDescriptor() = delete;
+	BindGroupLayoutDescriptor(std::vector<BindGroupLayoutEntry> const& entries);
 };
 
 #endif // BINDGROUPLAYOUTDESCRIPTOR_HPP

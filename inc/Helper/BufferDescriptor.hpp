@@ -7,13 +7,13 @@
 #include <wgpu-native/webgpu.hpp>
 
 struct BufferDescriptor : public wgpu::BufferDescriptor {
-    public:
-        BufferDescriptor() = default;
-        BufferDescriptor(size_t size, wgpu::BufferUsage usage, std::string overrideLabel = "");
+public:
+	BufferDescriptor() = default;
+	BufferDescriptor(size_t size, wgpu::BufferUsage usage, std::string overrideLabel = "");
 
-    public:
-        static int counter;
-        std::string newLabel = "";
+public:
+	static int counter;
+	std::string newLabel = "";
 };
 
 #endif // BUFFERDESCRIPTOR_HPP

@@ -3,7 +3,7 @@
 SamplerBindingLayout::SamplerBindingLayout(uint32_t samplerBinding, wgpu::ShaderStage samplerVisibility, wgpu::SamplerBindingType samplerType) {
 	binding = samplerBinding;
 	visibility = samplerVisibility;
-	
+
 	sampler.type = samplerType;
 	sampler.nextInChain = nullptr;
 

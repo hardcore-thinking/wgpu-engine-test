@@ -11,18 +11,22 @@
 #include <Helper/QuerySetDescriptor.hpp>
 
 class QuerySet {
-    public:
-        QuerySet();
-        QuerySet(Device& device, QuerySetDescriptor const& descriptor);
-        ~QuerySet();
+public:
+	QuerySet();
+	QuerySet(Device& device, QuerySetDescriptor const& descriptor);
+	~QuerySet();
 
-        wgpu::QuerySet& Handle() { return _handle; }
-        wgpu::QuerySet const& Handle() const { return _handle; }
+	wgpu::QuerySet& Handle() {
+		return _handle;
+	}
+	wgpu::QuerySet const& Handle() const {
+		return _handle;
+	}
 
-        wgpu::QuerySet* operator -> ();
+	wgpu::QuerySet* operator -> ();
 
-    private:
-        wgpu::QuerySet _handle = nullptr;
+private:
+	wgpu::QuerySet _handle = nullptr;
 };
 
 #endif // QUERYSET_HPP
