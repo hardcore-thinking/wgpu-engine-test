@@ -340,7 +340,28 @@ int main() {
 			queue->onSubmittedWorkDone(wgpu::CallbackMode::AllowSpontaneous, [](WGPUQueueWorkDoneStatus status) {
 				static int i = 0;
 				i++;
-				std::cout << "Job completed: " << i << "(" << status << ")" << std::endl; });
+				std::cout << "Job completed: " << i << " (wgpu::QueueWorkDoneStatus::"; 
+			
+				switch (status) {
+					case wgpu::QueueWorkDoneStatus::InstanceDropped:
+						std::cout << "InstanceDropped";
+						break;
+
+					case wgpu::QueueWorkDoneStatus::Error:
+						std::cout << "Error";
+						break;
+					
+					case wgpu::QueueWorkDoneStatus::Success:
+						std::cout << "Success";
+						break;
+					
+					default:
+						std::cout << "Unknown";
+						break;
+				}
+
+				std::cout << ")" << std::endl;
+			});
 
 			queue->submit(0, nullptr); // Submitting nothing just to check for ongoing asynchronous operations and call their callbacks if needed
 
